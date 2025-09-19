@@ -1,25 +1,163 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Payroll Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive Laravel-based payroll management system with attendance tracking, employee management, and department organization.
 
-## About Laravel
+## 🚀 Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Employee Management**: Complete CRUD operations for employee records
+- **Department Management**: Organize employees by departments
+- **Attendance System**: 
+  - Time In/Out functionality
+  - Daily attendance tracking
+  - Timekeeping records
+  - Overtime management
+  - Leave management
+- **Real-time Clock**: Live time display with Philippine timezone
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Role-based Access**: Admin and HR role management
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠️ Tech Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Backend**: Laravel 11
+- **Frontend**: Blade Templates + Tailwind CSS v3
+- **Database**: MySQL/PostgreSQL
+- **Build Tool**: Vite
+- **Icons**: FontAwesome 6
+
+## 📋 Prerequisites
+
+- PHP 8.2 or higher
+- Composer
+- Node.js 18+ and npm
+- MySQL/PostgreSQL
+- Git
+
+## 🔧 Installation
+
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd PayrollLaravel
+```
+
+### 2. Install PHP Dependencies
+```bash
+composer install
+```
+
+### 3. Install Node.js Dependencies
+```bash
+npm install
+```
+
+### 4. Environment Setup
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+### 5. Database Configuration
+Update your `.env` file with database credentials:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=payroll_system
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
+### 6. Run Database Migrations
+```bash
+php artisan migrate
+```
+
+### 7. Build Assets
+```bash
+npm run build
+```
+
+### 8. Start Development Server
+```bash
+# Terminal 1: Laravel server
+php artisan serve
+
+# Terminal 2: Vite dev server (for hot reloading)
+npm run dev
+```
+
+## 🎨 Frontend Development
+
+### Available NPM Scripts
+```bash
+npm run dev          # Start Vite dev server with hot reloading
+npm run build        # Build for production
+npm run watch        # Build and watch for changes
+npm run hot          # Start dev server with host access
+```
+
+### Tailwind CSS Configuration
+The project uses Tailwind CSS v3 with the following plugins:
+- `@tailwindcss/forms` - Better form styling
+- `@tailwindcss/typography` - Typography utilities
+
+### Custom CSS Classes
+- `.scrollbar-thin` - Custom scrollbar styling
+- `.animate-float` - Floating animation
+- Mobile-optimized touch targets and spacing
+
+## 🗄️ Database Structure
+
+### Key Tables
+- `employees` - Employee information
+- `departments` - Department data
+- `attendance_records` - Daily attendance tracking
+- `work_schedules` - Employee work schedules
+- `overtime_requests` - Overtime management
+- `leave_requests` - Leave management
+- `leave_balances` - Leave balance tracking
+
+## 🔐 Authentication & Roles
+
+The system supports role-based access control:
+- **Admin**: Full system access
+- **HR**: Human resources management
+- **Employee**: Basic attendance functions
+
+## 📱 Responsive Design
+
+- **Desktop**: Full-featured interface with tables
+- **Mobile**: Card-based layout for better touch interaction
+- **Tablet**: Optimized for medium screens
+
+## 🚀 Deployment
+
+### Production Build
+```bash
+npm run build
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+### Environment Variables for Production
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://your-domain.com
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 ## Learning Laravel
 
