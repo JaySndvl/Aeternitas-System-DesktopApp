@@ -27,6 +27,7 @@ class AttendanceRecord extends Model
         'overtime_hours',
         'status',
         'notes',
+        'created_by',
     ];
 
     protected $casts = [

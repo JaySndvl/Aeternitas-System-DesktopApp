@@ -78,6 +78,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/schedule', [App\Http\Controllers\Web\AttendanceController::class, 'schedule'])->name('schedule');
         Route::get('/statistics', [App\Http\Controllers\Web\AttendanceController::class, 'getStatistics'])->name('statistics');
         
+        // Attendance record management
+        Route::get('/create-record', [App\Http\Controllers\Web\AttendanceController::class, 'createRecord'])->name('create-record');
+        Route::post('/store-record', [App\Http\Controllers\Web\AttendanceController::class, 'storeRecord'])->name('store-record');
+        
         // Overtime routes
         Route::get('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'index'])->name('overtime');
         Route::post('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'store'])->name('overtime.store');

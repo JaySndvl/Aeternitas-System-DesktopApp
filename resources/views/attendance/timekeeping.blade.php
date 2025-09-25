@@ -4,6 +4,32 @@
 
 @section('content')
 <div class="space-y-6">
+    <!-- Success/Error Messages -->
+    @if(session('success'))
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -15,10 +41,10 @@
                 <i class="fas fa-download mr-2"></i>
                 Export
             </button>
-            <button class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            <a href="{{ route('attendance.create-record') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Add Record
-            </button>
+            </a>
         </div>
     </div>
 
@@ -171,7 +197,6 @@
                     @forelse($attendanceRecords as $record)
                         @php
                             $initials = strtoupper(substr($record->employee->first_name, 0, 1) . substr($record->employee->last_name, 0, 1));
-                            $overtimeHours = max(0, $record->total_hours - 8);
                         @endphp
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -210,8 +235,19 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    @if($record->break_duration)
-                                        {{ \App\Helpers\TimezoneHelper::formatHours($record->break_duration) }}
+                                    @php
+                                        $breakDuration = 0;
+                                        
+                                        if ($record->break_start && $record->break_end) {
+                                            $breakStart = \Carbon\Carbon::parse($record->break_start);
+                                            $breakEnd = \Carbon\Carbon::parse($record->break_end);
+                                            $breakMinutes = $breakStart->diffInMinutes($breakEnd);
+                                            $breakDuration = $breakMinutes / 60;
+                                            
+                                        }
+                                    @endphp
+                                    @if($breakDuration > 0)
+                                        {{ \App\Helpers\TimezoneHelper::formatHours($breakDuration) }}
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -228,8 +264,8 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    @if($overtimeHours > 0)
-                                        {{ \App\Helpers\TimezoneHelper::formatHours($overtimeHours) }}
+                                    @if($record->overtime_hours > 0)
+                                        {{ \App\Helpers\TimezoneHelper::formatHours($record->overtime_hours) }}
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -274,11 +310,14 @@
 
         <!-- Pagination -->
         <div class="px-4 sm:px-6 py-4 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1 flex justify-between sm:hidden">
-                    {{ $attendanceRecords->appends(request()->query())->links('pagination::simple-tailwind') }}
-                </div>
-                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <!-- Mobile Pagination -->
+            <div class="sm:hidden">
+                {{ $attendanceRecords->appends(request()->query())->links('pagination::default') }}
+            </div>
+            
+            <!-- Desktop Pagination -->
+            <div class="hidden sm:block">
+                <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-700">
                             Showing
@@ -291,7 +330,29 @@
                         </p>
                     </div>
                     <div>
-                        {{ $attendanceRecords->appends(request()->query())->links('pagination::tailwind') }}
+                        @if($attendanceRecords->hasPages())
+                            <div class="flex items-center space-x-2">
+                                @if($attendanceRecords->onFirstPage())
+                                    <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded">Previous</span>
+                                @else
+                                    <a href="{{ $attendanceRecords->previousPageUrl() }}" class="px-3 py-2 text-sm text-blue-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Previous</a>
+                                @endif
+                                
+                                @for($i = 1; $i <= $attendanceRecords->lastPage(); $i++)
+                                    @if($i == $attendanceRecords->currentPage())
+                                        <span class="px-3 py-2 text-sm text-white bg-blue-600 rounded">{{ $i }}</span>
+                                    @else
+                                        <a href="{{ $attendanceRecords->url($i) }}" class="px-3 py-2 text-sm text-blue-600 bg-white border border-gray-300 rounded hover:bg-gray-50">{{ $i }}</a>
+                                    @endif
+                                @endfor
+                                
+                                @if($attendanceRecords->hasMorePages())
+                                    <a href="{{ $attendanceRecords->nextPageUrl() }}" class="px-3 py-2 text-sm text-blue-600 bg-white border border-gray-300 rounded hover:bg-gray-50">Next</a>
+                                @else
+                                    <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded">Next</span>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -303,7 +364,6 @@
                 @forelse($attendanceRecords as $record)
                     @php
                         $initials = strtoupper(substr($record->employee->first_name, 0, 1) . substr($record->employee->last_name, 0, 1));
-                        $overtimeHours = max(0, $record->total_hours - 8);
                     @endphp
                     <div class="border border-gray-200 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-3">
@@ -365,6 +425,25 @@
                                     @endif
                                 </div>
                             </div>
+                            <div>
+                                <div class="text-gray-500">Break Time</div>
+                                <div class="font-medium">
+                                    @php
+                                        $breakDuration = 0;
+                                        if ($record->break_start && $record->break_end) {
+                                            $breakStart = \Carbon\Carbon::parse($record->break_start);
+                                            $breakEnd = \Carbon\Carbon::parse($record->break_end);
+                                            $breakMinutes = $breakStart->diffInMinutes($breakEnd);
+                                            $breakDuration = $breakMinutes / 60;
+                                        }
+                                    @endphp
+                                    @if($breakDuration > 0)
+                                        {{ \App\Helpers\TimezoneHelper::formatHours($breakDuration) }}
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                         <div class="flex justify-end space-x-2">
                             <button class="text-blue-600 hover:text-blue-900 transition-colors">
@@ -386,7 +465,7 @@
             <div class="px-4 py-4 border-t border-gray-200">
                 <div class="flex items-center justify-between">
                     <div class="flex-1 flex justify-between">
-                        {{ $attendanceRecords->appends(request()->query())->links('pagination::simple-tailwind') }}
+                        {{ $attendanceRecords->appends(request()->query())->links('pagination::default') }}
                     </div>
                 </div>
             </div>
