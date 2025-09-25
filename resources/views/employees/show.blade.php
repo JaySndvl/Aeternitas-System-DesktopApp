@@ -41,7 +41,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Email Address</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $employee->account->email }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->account?->email ?? 'No email' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Phone Number</label>
@@ -80,29 +80,29 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Role</label>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ $employee->account->role === 'admin' ? 'bg-red-100 text-red-800' : 
-                                   ($employee->account->role === 'hr' ? 'bg-purple-100 text-purple-800' : 
-                                   ($employee->account->role === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800')) }}">
-                                {{ ucfirst($employee->account->role) }}
+                                {{ $employee->account?->role === 'admin' ? 'bg-red-100 text-red-800' : 
+                                   ($employee->account?->role === 'hr' ? 'bg-purple-100 text-purple-800' : 
+                                   ($employee->account?->role === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800')) }}">
+                                {{ ucfirst($employee->account?->role ?? 'No role') }}
                             </span>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Status</label>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ $employee->account->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ $employee->account->is_active ? 'bg-green-400' : 'bg-red-400' }}"></div>
-                                {{ $employee->account->is_active ? 'Active' : 'Inactive' }}
+                                {{ $employee->account?->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ $employee->account?->is_active ? 'bg-green-400' : 'bg-red-400' }}"></div>
+                                {{ $employee->account?->is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Last Login</label>
                             <p class="mt-1 text-sm text-gray-900">
-                                {{ $employee->account->last_login_at ? $employee->account->last_login_at->format('M d, Y g:i A') : 'Never' }}
+                                {{ $employee->account?->last_login_at ? $employee->account->last_login_at->format('M d, Y g:i A') : 'Never' }}
                             </p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500">Account Created</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $employee->account->created_at->format('M d, Y') }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->account?->created_at?->format('M d, Y') ?? 'N/A' }}</p>
                         </div>
                     </div>
                 </div>

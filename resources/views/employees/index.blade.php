@@ -112,9 +112,9 @@
                     @forelse($employees as $employee)
                     <tr class="hover:bg-gray-50 transition-colors employee-row" 
                         data-name="{{ strtolower($employee->full_name) }}"
-                        data-email="{{ strtolower($employee->account->email) }}"
-                        data-department="{{ $employee->department->id }}"
-                        data-role="{{ $employee->account->role }}"
+                        data-email="{{ strtolower($employee->account?->email ?? '') }}"
+                        data-department="{{ $employee->department?->id ?? '' }}"
+                        data-role="{{ $employee->account?->role ?? '' }}"
                         data-position="{{ strtolower($employee->position) }}">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
@@ -130,14 +130,14 @@
                                         {{ $employee->full_name }}
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        {{ $employee->account->email }}
+                                        {{ $employee->account?->email ?? 'No email' }}
                                     </div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $employee->department->name }}</div>
-                            <div class="text-sm text-gray-500">{{ $employee->department->location }}</div>
+                            <div class="text-sm text-gray-900">{{ $employee->department?->name ?? 'No department' }}</div>
+                            <div class="text-sm text-gray-500">{{ $employee->department?->location ?? '' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">{{ $employee->position }}</div>
@@ -153,9 +153,9 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ $employee->account->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ $employee->account->is_active ? 'bg-green-400' : 'bg-red-400' }}"></div>
-                                {{ $employee->account->is_active ? 'Active' : 'Inactive' }}
+                                {{ $employee->account?->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ $employee->account?->is_active ? 'bg-green-400' : 'bg-red-400' }}"></div>
+                                {{ $employee->account?->is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -195,9 +195,9 @@
             @forelse($employees as $employee)
             <div class="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors employee-row" 
                  data-name="{{ strtolower($employee->full_name) }}"
-                 data-email="{{ strtolower($employee->account->email) }}"
-                 data-department="{{ $employee->department->id }}"
-                 data-role="{{ $employee->account->role }}"
+                 data-email="{{ strtolower($employee->account?->email ?? '') }}"
+                 data-department="{{ $employee->department?->id ?? '' }}"
+                 data-role="{{ $employee->account?->role ?? '' }}"
                  data-position="{{ strtolower($employee->position) }}">
                 <div class="flex items-start justify-between">
                     <div class="flex items-center space-x-3">
@@ -213,18 +213,18 @@
                                 {{ $employee->full_name }}
                             </div>
                             <div class="text-sm text-gray-500 truncate">
-                                {{ $employee->account->email }}
+                                {{ $employee->account?->email ?? 'No email' }}
                             </div>
                             <div class="text-sm text-gray-500">
-                                {{ $employee->department->name }}
+                                {{ $employee->department?->name ?? 'No department' }}
                             </div>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2">
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                            {{ $employee->account->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                            <div class="w-1.5 h-1.5 rounded-full mr-1 {{ $employee->account->is_active ? 'bg-green-400' : 'bg-red-400' }}"></div>
-                            {{ $employee->account->is_active ? 'Active' : 'Inactive' }}
+                            {{ $employee->account?->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                            <div class="w-1.5 h-1.5 rounded-full mr-1 {{ $employee->account?->is_active ? 'bg-green-400' : 'bg-red-400' }}"></div>
+                            {{ $employee->account?->is_active ? 'Active' : 'Inactive' }}
                         </span>
                     </div>
                 </div>

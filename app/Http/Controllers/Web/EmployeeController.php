@@ -105,7 +105,7 @@ class EmployeeController extends Controller
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:accounts,email,' . $employee->account->id,
+            'email' => 'required|email|unique:accounts,email,' . ($employee->account?->id ?? ''),
             'phone' => 'required|string|max:20',
             'position' => 'required|string|max:255',
             'department_id' => 'required|exists:departments,id',
@@ -125,11 +125,13 @@ class EmployeeController extends Controller
             'hire_date' => $request->hire_date,
         ]);
 
-        // Update account
-        $employee->account->update([
-            'email' => $request->email,
-            'role' => $request->role ?? $employee->account->role,
-        ]);
+        // Update account if it exists
+        if ($employee->account) {
+            $employee->account->update([
+                'email' => $request->email,
+                'role' => $request->role ?? $employee->account->role,
+            ]);
+        }
 
         return redirect()->route('employees.index')
             ->with('success', 'Employee updated successfully.');
@@ -140,8 +142,10 @@ class EmployeeController extends Controller
      */
     public function destroy(Employee $employee)
     {
-        // Delete account first
-        $employee->account->delete();
+        // Delete account first if it exists
+        if ($employee->account) {
+            $employee->account->delete();
+        }
         
         // Delete employee
         $employee->delete();
