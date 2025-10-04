@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('employee_id');
             $table->date('date');
-            $table->timestamp('start_time');
-            $table->timestamp('end_time');
+            $table->timestamp('start_time')->nullable();
+            $table->timestamp('end_time')->nullable();
             $table->decimal('hours', 8, 2);
             $table->decimal('rate_multiplier', 3, 2)->default(1.5);
             $table->text('reason');
