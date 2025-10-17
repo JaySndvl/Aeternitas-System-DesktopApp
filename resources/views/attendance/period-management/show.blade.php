@@ -79,118 +79,69 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-3 mb-6">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <!-- Total Employees -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h- w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-blue-600 text-sm"></i>
-                        </div>
+                    <div class="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-users text-blue-600 text-sm"></i>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['total_employees'] }}</h3>
-                        <p class="text-xs text-gray-600">Total Employees</p>
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900">{{ $summaryData['total_employees'] }}</h3>
+                        <p class="text-xs text-gray-600">Employees</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+            <!-- Present Days -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-check-circle text-green-600 text-sm"></i>
-                        </div>
+                    <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-check-circle text-green-600 text-sm"></i>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['present_days'] }}</h3>
-                        <p class="text-xs text-gray-600">Present Days</p>
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900">{{ $summaryData['present_days'] }}</h3>
+                        <p class="text-xs text-gray-600">Present</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+            <!-- Absent Days -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-clock text-purple-600 text-sm"></i>
-                        </div>
+                    <div class="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-user-times text-red-600 text-sm"></i>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_scheduled_hours']) }}</h3>
-                        <p class="text-xs text-gray-600">Scheduled Hours</p>
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900">{{ $summaryData['absent_days'] }}</h3>
+                        <p class="text-xs text-gray-600">Absent</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+            <!-- Scheduled Hours -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-sun text-green-600 text-sm"></i>
-                        </div>
+                    <div class="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-clock text-purple-600 text-sm"></i>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_morning_overtime_hours']) }}</h3>
-                        <p class="text-xs text-gray-600">Pre-Shift Overtime</p>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_scheduled_hours']) }}</h3>
+                        <p class="text-xs text-gray-600">Scheduled</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+            <!-- Total Overtime -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-moon text-orange-600 text-sm"></i>
-                        </div>
+                    <div class="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-plus text-orange-600 text-sm"></i>
                     </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_evening_overtime_hours']) }}</h3>
-                        <p class="text-xs text-gray-600">Post-Shift Overtime</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-user-times text-red-600 text-sm"></i>
-                        </div>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['absent_days'] }}</h3>
-                        <p class="text-xs text-gray-600">Absent Days</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-clock text-orange-600 text-sm"></i>
-                        </div>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['late_instances'] }}</h3>
-                        <p class="text-xs text-gray-600">Late Arrivals</p>
-                        <p class="text-xs text-gray-500">{{ number_format($summaryData['total_late_minutes']) }} min</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="h-8 w-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-moon text-indigo-600 text-sm"></i>
-                        </div>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['night_shift_instances'] }}</h3>
-                        <p class="text-xs text-gray-600">Night Shifts</p>
-                        <p class="text-xs text-gray-500">Based on Time In/Out</p>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_morning_overtime_hours'] + $summaryData['total_evening_overtime_hours']) }}</h3>
+                        <p class="text-xs text-gray-600">Overtime</p>
                     </div>
                 </div>
             </div>
