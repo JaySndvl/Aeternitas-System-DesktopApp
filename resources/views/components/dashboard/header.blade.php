@@ -20,10 +20,12 @@
             </div>
         </div>
         <div class="flex items-center space-x-1 sm:space-x-2 lg:space-x-3 flex-shrink-0">
-            <!-- Search - Hidden on mobile, shown on tablet+ -->
-            <div class="hidden md:block relative">
-                <input type="text" placeholder="Search..." class="w-48 lg:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <!-- Company Name Display - Hidden on mobile, shown on tablet+ -->
+            <div class="hidden md:block">
+                <div class="flex items-center px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <i class="fas fa-industry text-blue-600 mr-2"></i>
+                    <span class="text-sm font-medium text-blue-800">Eternal Bright Sanctuary Inc.</span>
+                </div>
             </div>
             
             <!-- Notifications -->

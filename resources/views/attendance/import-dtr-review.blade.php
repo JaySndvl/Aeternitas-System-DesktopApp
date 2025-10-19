@@ -130,6 +130,27 @@
         </div>
     </div>
 
+    <!-- Temporary Storage Information -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-500"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">Temporary Storage</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>When you click "Save to Temporary Storage", the data will be saved to a temporary table for review and final processing. This allows you to:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>Review the data before final import to attendance records</li>
+                        <li>Make corrections if needed</li>
+                        <li>Process the data in batches</li>
+                        <li>Track import history with batch IDs</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Data Preview - Collapsible by Employee -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="px-4 py-5 sm:p-6">
@@ -314,14 +335,14 @@
                 <form method="POST" action="{{ route('attendance.import-dtr.confirm') }}" class="inline">
                     @csrf
                     <button type="submit" class="px-4 py-2 bg-green-600 border border-transparent rounded-lg font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                        <i class="fas fa-check mr-2"></i>
-                        Confirm Import
+                        <i class="fas fa-save mr-2"></i>
+                        Save to Temporary Storage
                     </button>
                 </form>
             @else
                 <button disabled class="px-4 py-2 bg-gray-400 border border-transparent rounded-lg font-medium text-white cursor-not-allowed">
                     <i class="fas fa-times mr-2"></i>
-                    Cannot Import (Has Errors)
+                    Cannot Save (Has Errors)
                 </button>
             @endif
         </div>

@@ -411,7 +411,31 @@ public function schedule(Request $request)
     public function importDtr()
     {
         $user = Auth::user();
-        return view('attendance.import-dtr', compact('user'));
+        
+        // Get recent temp timekeeping imports (last 10 batches)
+        $recentImports = \App\Models\TempTimekeeping::select('import_batch_id')
+            ->selectRaw('MIN(created_at) as created_at')
+            ->groupBy('import_batch_id')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                $batchRecords = \App\Models\TempTimekeeping::where('import_batch_id', $item->import_batch_id)->get();
+                return [
+                    'batch_id' => $item->import_batch_id,
+                    'created_at' => $item->created_at,
+                    'total_records' => $batchRecords->count(),
+                    'processed_records' => $batchRecords->where('is_processed', true)->count(),
+                    'pending_records' => $batchRecords->where('is_processed', false)->count(),
+                    'employees' => $batchRecords->pluck('employee_id')->unique()->count(),
+                    'date_range' => [
+                        'start' => $batchRecords->min('date'),
+                        'end' => $batchRecords->max('date')
+                    ]
+                ];
+            });
+        
+        return view('attendance.import-dtr', compact('user', 'recentImports'));
     }
 
     /**
@@ -505,45 +529,340 @@ public function schedule(Request $request)
                 ->with('error', 'No import data found. Please upload a file first.');
         }
         
-        if (!$validation['is_valid']) {
-            return redirect()->route('attendance.import-dtr.review')
-                ->with('error', 'Cannot import data with validation errors. Please fix the issues first.');
-        }
-        
         try {
+            // Generate a unique batch ID for this import
+            $batchId = \App\Models\TempTimekeeping::generateBatchId();
             $importedCount = 0;
             $errors = collect();
             
+            // Debug: Log the start of the process
+            \Log::info('Starting temp timekeeping import process', [
+                'batch_id' => $batchId,
+                'record_count' => $parsedData->count()
+            ]);
+            
             foreach ($parsedData as $record) {
+                // Prepare validation errors for this record
+                $recordErrors = [];
                 $employee = \App\Models\Employee::where('employee_id', $record['employee_id'])->first();
                 
                 if (!$employee) {
-                    $errors->push("Employee ID '{$record['employee_id']}' not found");
-                    continue;
+                    $recordErrors[] = "Employee ID '{$record['employee_id']}' not found in system";
                 }
                 
-                // Create attendance record
-                \App\Models\AttendanceRecord::create([
-                    'employee_id' => $employee->id,
+                // Check for duplicate records in temp table
+                $existingTempRecord = \App\Models\TempTimekeeping::where('employee_id', $record['employee_id'])
+                    ->where('date', $record['date'])
+                    ->where('import_batch_id', $batchId)
+                    ->first();
+                
+                if ($existingTempRecord) {
+                    $recordErrors[] = "Duplicate record for employee {$record['employee_id']} on {$record['date']}";
+                }
+                
+                    // Create temp timekeeping record
+                    try {
+                        // Auto-process day off records
+                        $isProcessed = ($record['status'] === 'day_off') ? true : false;
+                        
+                        $tempRecord = \App\Models\TempTimekeeping::create([
+                            'employee_id' => $record['employee_id'],
+                            'employee_name' => $record['employee_name'] ?? null,
                     'date' => $record['date'],
                     'time_in' => $record['time_in'],
                     'time_out' => $record['time_out'],
-                    'total_hours' => $record['total_hours'],
+                            'break_start' => $record['break_start'] ?? null,
+                            'break_end' => $record['break_end'] ?? null,
+                            'total_hours' => $record['total_hours'] ?? 0,
+                            'regular_hours' => $record['regular_hours'] ?? 0,
+                            'overtime_hours' => $record['overtime_hours'] ?? 0,
                     'status' => $record['status'],
-                ]);
+                            'schedule_status' => $record['schedule_status'] ?? null,
+                            'notes' => $record['notes'] ?? null,
+                            'validation_errors' => !empty($recordErrors) ? json_encode($recordErrors) : null,
+                            'import_batch_id' => $batchId,
+                            'is_processed' => $isProcessed
+                        ]);
+                    
+                        \Log::info('Successfully created temp record', [
+                            'record_id' => $tempRecord->id,
+                            'employee_id' => $record['employee_id'],
+                            'date' => $record['date']
+                        ]);
+
+                        // Auto-create attendance record for day off
+                        if ($record['status'] === 'day_off' && $employee) {
+                            try {
+                                // Check for existing attendance record
+                                $existingAttendanceRecord = \App\Models\AttendanceRecord::where('employee_id', $employee->id)
+                                    ->where('date', $record['date'])
+                                    ->first();
+
+                                if (!$existingAttendanceRecord) {
+                                    \App\Models\AttendanceRecord::create([
+                                        'employee_id' => $employee->id,
+                                        'date' => $record['date'],
+                                        'time_in' => null,
+                                        'time_out' => null,
+                                        'break_start' => null,
+                                        'break_end' => null,
+                                        'total_hours' => 0,
+                                        'regular_hours' => 0,
+                                        'overtime_hours' => 0,
+                                        'status' => 'day_off',
+                                        'notes' => 'Auto-processed day off',
+                                        'is_night_shift' => false
+                                    ]);
+
+                                    \Log::info('Auto-created attendance record for day off', [
+                                        'employee_id' => $record['employee_id'],
+                                        'date' => $record['date']
+                                    ]);
+                                }
+                            } catch (\Exception $e) {
+                                \Log::error('Failed to auto-create attendance record for day off', [
+                                    'employee_id' => $record['employee_id'],
+                                    'date' => $record['date'],
+                                    'error' => $e->getMessage()
+                                ]);
+                            }
+                        }
                 
                 $importedCount++;
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create temp record', [
+                        'employee_id' => $record['employee_id'],
+                        'date' => $record['date'],
+                        'error' => $e->getMessage()
+                    ]);
+                    $errors->push("Failed to save record for {$record['employee_id']} on {$record['date']}: " . $e->getMessage());
+                }
             }
             
             // Clear session data
             session()->forget(['dtr_import_data', 'dtr_import_validation', 'dtr_import_file']);
             
+            \Log::info('Temp timekeeping import completed', [
+                'batch_id' => $batchId,
+                'imported_count' => $importedCount,
+                'error_count' => $errors->count()
+            ]);
+            
             return redirect()->route('attendance.timekeeping')
-                ->with('success', "Successfully imported {$importedCount} attendance records.");
+                ->with('success', "Successfully saved {$importedCount} records to temporary storage. Records are ready for final processing.");
                 
         } catch (\Exception $e) {
             return redirect()->route('attendance.import-dtr.review')
-                ->with('error', 'Failed to import data: ' . $e->getMessage());
+                ->with('error', 'Failed to save data to temporary storage: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show temporary timekeeping records
+     */
+    public function tempTimekeeping(Request $request)
+    {
+        $user = Auth::user();
+        
+        $query = \App\Models\TempTimekeeping::with('employee');
+        
+        // Filter by batch ID if provided
+        if ($request->has('batch') && !empty($request->batch)) {
+            $query->where('import_batch_id', $request->batch);
+        }
+        
+        // Get all records first
+        $allRecords = $query->orderBy('created_at', 'desc')->get();
+        
+        // Group by employee and get unique employees
+        $allGroupedRecords = $allRecords->groupBy('employee_id');
+        $uniqueEmployees = $allGroupedRecords->keys();
+        
+        // Implement employee-based pagination (10 employees per page)
+        $employeesPerPage = 10;
+        $currentPage = $request->get('page', 1);
+        $offset = ($currentPage - 1) * $employeesPerPage;
+        $paginatedEmployees = $uniqueEmployees->slice($offset, $employeesPerPage);
+        
+        // Get records for paginated employees
+        $groupedRecords = collect();
+        foreach ($paginatedEmployees as $employeeId) {
+            $employeeRecords = $allGroupedRecords[$employeeId];
+            $firstRecord = $employeeRecords->first();
+            $groupedRecords[$employeeId] = [
+                'employee_id' => $firstRecord->employee_id,
+                'employee_name' => $firstRecord->employee_name,
+                'records' => $employeeRecords->sortBy('date'),
+                'total_records' => $employeeRecords->count(),
+                'processed_records' => $employeeRecords->where('is_processed', true)->count(),
+                'pending_records' => $employeeRecords->where('is_processed', false)->count(),
+                'date_range' => [
+                    'start' => $employeeRecords->min('date'),
+                    'end' => $employeeRecords->max('date')
+                ],
+                'status_summary' => $employeeRecords->groupBy('status')->map->count()
+            ];
+        }
+        
+        // Create pagination info
+        $totalEmployees = $uniqueEmployees->count();
+        $totalPages = ceil($totalEmployees / $employeesPerPage);
+        $hasNextPage = $currentPage < $totalPages;
+        $hasPrevPage = $currentPage > 1;
+        
+        $paginationInfo = [
+            'current_page' => $currentPage,
+            'total_pages' => $totalPages,
+            'total_employees' => $totalEmployees,
+            'employees_per_page' => $employeesPerPage,
+            'has_next_page' => $hasNextPage,
+            'has_prev_page' => $hasPrevPage,
+            'next_page' => $hasNextPage ? $currentPage + 1 : null,
+            'prev_page' => $hasPrevPage ? $currentPage - 1 : null
+        ];
+        
+        // Get batch information if filtering by batch
+        $batchInfo = null;
+        if ($request->has('batch') && !empty($request->batch)) {
+            $batchRecords = \App\Models\TempTimekeeping::where('import_batch_id', $request->batch)->get();
+            $batchInfo = [
+                'batch_id' => $request->batch,
+                'total_records' => $batchRecords->count(),
+                'processed_records' => $batchRecords->where('is_processed', true)->count(),
+                'pending_records' => $batchRecords->where('is_processed', false)->count(),
+                'employees' => $batchRecords->pluck('employee_id')->unique()->count(),
+                'date_range' => [
+                    'start' => $batchRecords->min('date'),
+                    'end' => $batchRecords->max('date')
+                ],
+                'created_at' => $batchRecords->first()?->created_at
+            ];
+        }
+        
+        return view('attendance.temp-timekeeping', compact('user', 'allRecords', 'groupedRecords', 'batchInfo', 'paginationInfo'));
+    }
+
+    /**
+     * Approve selected temp timekeeping records and save to attendance_records
+     */
+    public function approveTempTimekeeping(Request $request)
+    {
+        $request->validate([
+            'selected_records' => 'required|array|min:1',
+            'selected_records.*' => 'required|string|exists:temp_timekeeping,id'
+        ]);
+
+        try {
+            $selectedRecordIds = $request->selected_records;
+            $approvedCount = 0;
+            $errors = collect();
+
+            \Log::info('Starting temp timekeeping approval process', [
+                'selected_count' => count($selectedRecordIds),
+                'record_ids' => $selectedRecordIds
+            ]);
+
+            foreach ($selectedRecordIds as $recordId) {
+                $tempRecord = \App\Models\TempTimekeeping::find($recordId);
+                
+                if (!$tempRecord) {
+                    $errors->push("Record with ID {$recordId} not found");
+                    continue;
+                }
+
+                if ($tempRecord->is_processed) {
+                    $errors->push("Record for employee {$tempRecord->employee_id} on {$tempRecord->date} is already processed");
+                    continue;
+                }
+
+                // Get or create employee
+                $employee = \App\Models\Employee::where('employee_id', $tempRecord->employee_id)->first();
+                if (!$employee) {
+                    $errors->push("Employee {$tempRecord->employee_id} not found in system");
+                    continue;
+                }
+
+                // Check for existing attendance record
+                $existingRecord = \App\Models\AttendanceRecord::where('employee_id', $employee->id)
+                    ->where('date', $tempRecord->date)
+                    ->first();
+
+                if ($existingRecord) {
+                    $errors->push("Attendance record already exists for employee {$tempRecord->employee_id} on {$tempRecord->date}");
+                    continue;
+                }
+
+                // Create attendance record
+                try {
+                    // Set default break times (12pm-1pm) if employee has both time in and time out
+                    $breakStart = $tempRecord->break_start;
+                    $breakEnd = $tempRecord->break_end;
+                    
+                    if ($tempRecord->time_in && $tempRecord->time_out && !$breakStart && !$breakEnd) {
+                        // Set default break time to 12:00 PM - 1:00 PM
+                        $breakStart = \Carbon\Carbon::parse($tempRecord->date)->setTime(12, 0, 0);
+                        $breakEnd = \Carbon\Carbon::parse($tempRecord->date)->setTime(13, 0, 0);
+                    }
+                    
+                    $attendanceRecord = \App\Models\AttendanceRecord::create([
+                        'employee_id' => $employee->id,
+                        'date' => $tempRecord->date,
+                        'time_in' => $tempRecord->time_in,
+                        'time_out' => $tempRecord->time_out,
+                        'break_start' => $breakStart,
+                        'break_end' => $breakEnd,
+                        'total_hours' => $tempRecord->total_hours,
+                        'regular_hours' => $tempRecord->regular_hours,
+                        'overtime_hours' => $tempRecord->overtime_hours,
+                        'status' => $tempRecord->status,
+                        'notes' => $tempRecord->notes,
+                        'is_night_shift' => false // Default value
+                    ]);
+
+                    // Mark temp record as processed
+                    $tempRecord->update(['is_processed' => true]);
+
+                    \Log::info('Successfully approved temp record', [
+                        'temp_record_id' => $tempRecord->id,
+                        'attendance_record_id' => $attendanceRecord->id,
+                        'employee_id' => $tempRecord->employee_id,
+                        'date' => $tempRecord->date
+                    ]);
+
+                    $approvedCount++;
+
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create attendance record', [
+                        'temp_record_id' => $tempRecord->id,
+                        'employee_id' => $tempRecord->employee_id,
+                        'date' => $tempRecord->date,
+                        'error' => $e->getMessage()
+                    ]);
+                    $errors->push("Failed to create attendance record for {$tempRecord->employee_id} on {$tempRecord->date}: " . $e->getMessage());
+                }
+            }
+
+            \Log::info('Temp timekeeping approval completed', [
+                'approved_count' => $approvedCount,
+                'error_count' => $errors->count()
+            ]);
+
+            if ($approvedCount > 0) {
+                $message = "Successfully approved {$approvedCount} records and saved to attendance records.";
+                if ($errors->count() > 0) {
+                    $message .= " {$errors->count()} records had errors and were not processed.";
+                }
+                return redirect()->route('attendance.temp-timekeeping')->with('success', $message);
+            } else {
+                return redirect()->route('attendance.temp-timekeeping')->with('error', 'No records were approved. ' . $errors->implode(', '));
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Temp timekeeping approval failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->route('attendance.temp-timekeeping')->with('error', 'Failed to approve records: ' . $e->getMessage());
         }
     }
 

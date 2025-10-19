@@ -53,6 +53,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{schedule}', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'destroy'])->name('destroy');
     });
     
+    // Company routes
+    Route::resource('companies', App\Http\Controllers\Web\CompanyController::class);
+    
     // Payroll routes
     Route::resource('payrolls', PayrollController::class);
     Route::post('/payrolls/{payroll}/process', [PayrollController::class, 'process'])->name('payrolls.process');
@@ -97,6 +100,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/import-dtr', [App\Http\Controllers\Web\AttendanceController::class, 'processImportDtr'])->name('import-dtr.process');
         Route::get('/import-dtr/review', [App\Http\Controllers\Web\AttendanceController::class, 'reviewImportDtr'])->name('import-dtr.review');
         Route::post('/import-dtr/confirm', [App\Http\Controllers\Web\AttendanceController::class, 'confirmImportDtr'])->name('import-dtr.confirm');
+        Route::get('/temp-timekeeping', [App\Http\Controllers\Web\AttendanceController::class, 'tempTimekeeping'])->name('temp-timekeeping');
+        Route::post('/temp-timekeeping/approve', [App\Http\Controllers\Web\AttendanceController::class, 'approveTempTimekeeping'])->name('temp-timekeeping.approve');
         
             // Attendance record management routes
         Route::get('/create-record', [App\Http\Controllers\Web\AttendanceController::class, 'createRecord'])->name('create-record');
