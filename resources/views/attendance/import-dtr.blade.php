@@ -156,49 +156,62 @@
     <!-- Recent Imports Section -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="p-4 sm:p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Imports</h3>
-            
-            <div class="space-y-3">
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-check text-green-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">DTR_Import_2024_12_19.xlsx</p>
-                            <p class="text-xs text-gray-500">Imported 45 records • 2 hours ago</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Completed
-                        </span>
-                        <button class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-exclamation-triangle text-yellow-600"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">DTR_Import_2024_12_18.xlsx</p>
-                            <p class="text-xs text-gray-500">3 validation errors • 1 day ago</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            Errors
-                        </span>
-                        <button class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Recent Imports</h3>
+                <a href="{{ route('attendance.temp-timekeeping') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    View All →
+                </a>
             </div>
+            
+            @if($recentImports->count() > 0)
+                <div class="space-y-3">
+                    @foreach($recentImports as $import)
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 {{ $import['pending_records'] > 0 ? 'bg-yellow-100' : 'bg-green-100' }} rounded-lg flex items-center justify-center">
+                                    <i class="fas {{ $import['pending_records'] > 0 ? 'fa-clock text-yellow-600' : 'fa-check text-green-600' }}"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        Batch: {{ substr($import['batch_id'], 0, 20) }}...
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ $import['total_records'] }} records • 
+                                        {{ $import['employees'] }} employees • 
+                                        {{ $import['created_at']->diffForHumans() }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        Date range: {{ \Carbon\Carbon::parse($import['date_range']['start'])->format('M d') }} - {{ \Carbon\Carbon::parse($import['date_range']['end'])->format('M d, Y') }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                @if($import['pending_records'] > 0)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        {{ $import['pending_records'] }} Pending
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        All Processed
+                                    </span>
+                                @endif
+                                
+                                <a href="{{ route('attendance.temp-timekeeping') }}?batch={{ $import['batch_id'] }}" 
+                                   class="text-gray-400 hover:text-gray-600" 
+                                   title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="text-center py-8">
+                    <i class="fas fa-database text-gray-400 text-3xl mb-3"></i>
+                    <h4 class="text-sm font-medium text-gray-900 mb-1">No Recent Imports</h4>
+                    <p class="text-sm text-gray-500">Upload DTR files to see recent imports here</p>
+                </div>
+            @endif
         </div>
     </div>
 </div>

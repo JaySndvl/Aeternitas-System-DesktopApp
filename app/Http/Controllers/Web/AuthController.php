@@ -14,11 +14,21 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        // If user is already authenticated, redirect to dashboard
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+        
         return view('auth.login');
     }
 
     public function login(Request $request)
     {
+        // If user is already authenticated, redirect to dashboard
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',

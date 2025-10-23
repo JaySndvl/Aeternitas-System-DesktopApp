@@ -24,42 +24,99 @@
 
     <!-- Payroll Period Selector -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div class="mb-4 sm:mb-0">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div class="mb-4 lg:mb-0">
                 <h3 class="text-lg font-medium text-gray-900">Payroll Period</h3>
                 <p class="text-sm text-gray-600">Select the payroll period to view and manage</p>
             </div>
             <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                <div>
-                    <label for="payrollMonth" class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                    <select id="payrollMonth" class="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                        <option value="01">January</option>
-                        <option value="02">February</option>
-                        <option value="03">March</option>
-                        <option value="04">April</option>
-                        <option value="05">May</option>
-                        <option value="06">June</option>
-                        <option value="07">July</option>
-                        <option value="08">August</option>
-                        <option value="09">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
+                <!-- Single Calendar Date Range Picker -->
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Select Date Range</label>
+                    <div class="relative">
+                        <button onclick="toggleCalendar()" 
+                                id="dateRangeButton" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-left flex items-center justify-between">
+                            <span id="dateRangeText">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
+                            <i class="fas fa-calendar-alt text-gray-400"></i>
+                        </button>
+                        
+                        <!-- Calendar Popup -->
+                        <div id="calendarPopup" class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 hidden">
+                            <div class="p-4">
+                                <!-- Calendar Header -->
+                                <div class="flex items-center justify-between mb-4">
+                                    <button onclick="previousMonth()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                                        <i class="fas fa-chevron-left text-gray-600"></i>
+                                    </button>
+                                    <div class="text-center">
+                                        <h3 id="calendarMonthYear" class="text-lg font-medium text-gray-900">December 2024</h3>
+                                        <p id="selectionStatus" class="text-xs text-gray-500 mt-1">Select start date</p>
+                                    </div>
+                                    <button onclick="nextMonth()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                                        <i class="fas fa-chevron-right text-gray-600"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Calendar Grid -->
+                                <div class="grid grid-cols-7 gap-1 mb-2">
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Sun</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Mon</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Tue</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Wed</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Thu</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Fri</div>
+                                    <div class="text-center text-xs font-medium text-gray-500 py-2">Sat</div>
+                                </div>
+                                
+                                <div id="calendarGrid" class="grid grid-cols-7 gap-1">
+                                    <!-- Calendar days will be generated here -->
+                                </div>
+                                
+                                <!-- Quick Presets -->
+                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                    <div class="flex flex-wrap gap-2">
+                                        <button onclick="setDateRange('thisMonth')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                            This Month
+                                        </button>
+                                        <button onclick="setDateRange('lastMonth')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                            Last Month
+                                        </button>
+                                        <button onclick="setDateRange('thisQuarter')" class="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                            This Quarter
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="mt-4 flex justify-end space-x-2">
+                                    <button onclick="clearDateRange()" class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors">
+                                        Clear
+                                    </button>
+                                    <button onclick="applyDateRange()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label for="payrollYear" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                    <select id="payrollYear" class="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                    </select>
-                </div>
+                
                 <div class="flex items-end">
-                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <button onclick="loadPayrollData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fas fa-search mr-2"></i>Load
                     </button>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Selected Period Display -->
+        <div id="selectedPeriod" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-calendar-check text-blue-600 mr-2"></i>
+                <span class="text-sm font-medium text-blue-800">
+                    Selected Period: <span id="periodDisplay">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
+                </span>
             </div>
         </div>
     </div>
@@ -126,13 +183,22 @@
     <!-- Employee Rate Information -->
     @if($employees->count() > 0)
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
-            <i class="fas fa-calculator mr-2 text-blue-600"></i>
-            Employee Daily & Hourly Rates
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-calculator mr-2 text-blue-600"></i>
+                Employee Daily & Hourly Rates
+            </h3>
+            <div class="flex items-center space-x-2">
+                <span id="employeePaginationInfo" class="text-sm text-gray-500">
+                    Showing 1-6 of {{ $employees->count() }} employees
+                </span>
+            </div>
+        </div>
+        
+        <!-- Employee Cards Container -->
+        <div id="employeeCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($employees->take(6) as $employee)
-            <div class="border border-gray-200 rounded-lg p-4">
+            <div class="border border-gray-200 rounded-lg p-4 employee-card">
                 <div class="flex items-center justify-between mb-2">
                     <h4 class="font-medium text-gray-900">{{ $employee->full_name }}</h4>
                     <span class="text-xs text-gray-500">{{ $employee->employee_id }}</span>
@@ -158,9 +224,47 @@
             </div>
             @endforeach
         </div>
+        
+        <!-- Hidden data for JavaScript -->
+        <script type="application/json" id="employeesData">
+            {!! json_encode($employees->map(function($employee) {
+                return [
+                    'id' => $employee->id,
+                    'full_name' => $employee->full_name,
+                    'employee_id' => $employee->employee_id,
+                    'salary' => $employee->salary,
+                    'daily_rate' => $employee->daily_rate,
+                    'hourly_rate' => $employee->hourly_rate,
+                    'overtime_rate' => $employee->overtime_rate
+                ];
+            })) !!}
+        </script>
+        
+        <!-- Pagination Controls -->
         @if($employees->count() > 6)
-        <div class="mt-4 text-center">
-            <p class="text-sm text-gray-600">Showing first 6 employees. Total: {{ $employees->count() }} employees</p>
+        <div class="mt-6 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <button id="prevEmployeePage" 
+                        onclick="changeEmployeePage(-1)" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    <i class="fas fa-chevron-left mr-1"></i>
+                    Previous
+                </button>
+                <button id="nextEmployeePage" 
+                        onclick="changeEmployeePage(1)" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                    Next
+                    <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">Page</span>
+                <span id="currentEmployeePage" class="text-sm font-medium text-gray-900">1</span>
+                <span class="text-sm text-gray-500">of</span>
+                <span id="totalEmployeePages" class="text-sm font-medium text-gray-900">{{ ceil($employees->count() / 6) }}</span>
+            </div>
         </div>
         @endif
     </div>
@@ -590,6 +694,423 @@ document.getElementById('payrollModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closePayrollModal();
     }
+});
+
+// Single Calendar Date Range Picker
+let currentDate = new Date();
+let selectedFromDate = null;
+let selectedToDate = null;
+let isSelectingFrom = true;
+
+function toggleCalendar() {
+    const popup = document.getElementById('calendarPopup');
+    popup.classList.toggle('hidden');
+    
+    if (!popup.classList.contains('hidden')) {
+        generateCalendar();
+    }
+}
+
+function generateCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Check if calendar is visible before updating elements
+    const calendarPopup = document.getElementById('calendarPopup');
+    if (calendarPopup && calendarPopup.classList.contains('hidden')) {
+        return; // Don't update if calendar is not visible
+    }
+    
+    // Update month/year display
+    const monthYearElement = document.getElementById('calendarMonthYear');
+    if (monthYearElement) {
+        monthYearElement.textContent = 
+            currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const calendarGrid = document.getElementById('calendarGrid');
+    if (!calendarGrid) {
+        return; // Exit if calendar grid doesn't exist
+    }
+    calendarGrid.innerHTML = '';
+    
+    // Generate 42 days (6 weeks)
+    for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const dayElement = document.createElement('div');
+        dayElement.className = 'text-center py-2 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors';
+        dayElement.textContent = date.getDate();
+        
+        // Add classes based on date state
+        if (date.getMonth() !== month) {
+            dayElement.classList.add('text-gray-400');
+        } else {
+            dayElement.classList.add('text-gray-900');
+        }
+        
+        // Highlight selected dates
+        if (selectedFromDate && isSameDate(date, selectedFromDate)) {
+            dayElement.classList.add('bg-blue-500', 'text-white', 'font-medium');
+        } else if (selectedToDate && isSameDate(date, selectedToDate)) {
+            dayElement.classList.add('bg-blue-500', 'text-white', 'font-medium');
+        } else if (selectedFromDate && selectedToDate && 
+                   date >= selectedFromDate && date <= selectedToDate) {
+            dayElement.classList.add('bg-blue-100', 'text-blue-800');
+        } else if (selectedFromDate && !selectedToDate && date >= selectedFromDate) {
+            // Highlight potential "to" dates when only "from" is selected
+            dayElement.classList.add('bg-blue-50', 'text-blue-600', 'font-medium');
+        }
+        
+        // Add click handler
+        dayElement.addEventListener('click', () => selectDate(date));
+        
+        calendarGrid.appendChild(dayElement);
+    }
+}
+
+function selectDate(date) {
+    if (isSelectingFrom || !selectedFromDate) {
+        // First date selection (from)
+        selectedFromDate = new Date(date);
+        selectedToDate = null;
+        isSelectingFrom = false;
+        
+        // Update display to show we're now selecting "to" date
+        updateDateRangeDisplay();
+        updatePeriodDisplay();
+        generateCalendar();
+    } else {
+        // Second date selection (to)
+        if (date < selectedFromDate) {
+            selectedToDate = selectedFromDate;
+            selectedFromDate = new Date(date);
+        } else {
+            selectedToDate = new Date(date);
+        }
+        isSelectingFrom = true;
+        
+        // Update display and keep calendar open
+        updateDateRangeDisplay();
+        updatePeriodDisplay();
+        generateCalendar();
+        
+        // Don't auto-close the calendar, let user manually apply or continue selecting
+    }
+}
+
+function isSameDate(date1, date2) {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+}
+
+function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    generateCalendar();
+}
+
+function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    generateCalendar();
+}
+
+function setDateRange(preset) {
+    const today = new Date();
+    
+    switch(preset) {
+        case 'thisMonth':
+            selectedFromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            selectedToDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+            
+        case 'lastMonth':
+            selectedFromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            selectedToDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+            
+        case 'thisQuarter':
+            const quarter = Math.floor(today.getMonth() / 3);
+            selectedFromDate = new Date(today.getFullYear(), quarter * 3, 1);
+            selectedToDate = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+            break;
+    }
+    
+    updateDateRangeDisplay();
+    updatePeriodDisplay();
+    generateCalendar();
+}
+
+function clearDateRange() {
+    selectedFromDate = null;
+    selectedToDate = null;
+    isSelectingFrom = true;
+    
+    // Update the display first
+    updateDateRangeDisplay();
+    updatePeriodDisplay();
+    
+    // Only regenerate calendar if it's visible
+    const calendarPopup = document.getElementById('calendarPopup');
+    if (calendarPopup && !calendarPopup.classList.contains('hidden')) {
+        generateCalendar();
+    }
+}
+
+function applyDateRange() {
+    if (selectedFromDate && selectedToDate) {
+        updatePeriodDisplay();
+        toggleCalendar();
+    } else {
+        alert('Please select both start and end dates');
+    }
+}
+
+function updateDateRangeDisplay() {
+    const dateRangeText = document.getElementById('dateRangeText');
+    const selectionStatus = document.getElementById('selectionStatus');
+    
+    if (selectedFromDate && selectedToDate) {
+        dateRangeText.textContent = `${formatDateForDisplay(selectedFromDate)} - ${formatDateForDisplay(selectedToDate)}`;
+        if (selectionStatus) {
+            selectionStatus.textContent = 'Range selected - Click Apply to confirm';
+            selectionStatus.className = 'text-xs text-green-600 mt-1 font-medium';
+        }
+    } else if (selectedFromDate) {
+        dateRangeText.textContent = `${formatDateForDisplay(selectedFromDate)} - Select end date`;
+        if (selectionStatus) {
+            selectionStatus.textContent = 'Now select end date';
+            selectionStatus.className = 'text-xs text-blue-600 mt-1 font-medium';
+        }
+    } else {
+        dateRangeText.textContent = 'Select start date';
+        if (selectionStatus) {
+            selectionStatus.textContent = 'Select start date';
+            selectionStatus.className = 'text-xs text-gray-500 mt-1';
+        }
+    }
+}
+
+function formatDateForInput(date) {
+    return date.toISOString().split('T')[0];
+}
+
+function formatDateForDisplay(date) {
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+}
+
+function updatePeriodDisplay() {
+    const periodDisplay = document.getElementById('periodDisplay');
+    
+    if (selectedFromDate && selectedToDate) {
+        periodDisplay.textContent = `${formatDateForDisplay(selectedFromDate)} - ${formatDateForDisplay(selectedToDate)}`;
+    } else if (selectedFromDate) {
+        periodDisplay.textContent = `${formatDateForDisplay(selectedFromDate)} - Select end date`;
+    } else {
+        periodDisplay.textContent = 'Select date range';
+    }
+}
+
+function loadPayrollData() {
+    if (!selectedFromDate || !selectedToDate) {
+        alert('Please select both from and to dates');
+        return;
+    }
+    
+    if (selectedFromDate > selectedToDate) {
+        alert('From date cannot be later than to date');
+        return;
+    }
+    
+    // Show loading state
+    const loadButton = event.target;
+    const originalText = loadButton.innerHTML;
+    loadButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+    loadButton.disabled = true;
+    
+    // Simulate API call (replace with actual implementation)
+    setTimeout(() => {
+        // Reset button
+        loadButton.innerHTML = originalText;
+        loadButton.disabled = false;
+        
+        // Show success message
+        showNotification('Payroll data loaded successfully!', 'success');
+        
+        // Here you would typically reload the page with new data or update the content via AJAX
+        // For now, we'll just show a success message
+    }, 1500);
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+            ${message}
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Employee Pagination
+let currentEmployeePage = 1;
+const employeesPerPage = 6;
+let allEmployees = [];
+
+// Initialize employee data from server
+function initializeEmployeeData() {
+    // Get all employee data from the server-side JSON
+    const employeesDataScript = document.getElementById('employeesData');
+    if (employeesDataScript) {
+        const employeesData = JSON.parse(employeesDataScript.textContent);
+        allEmployees = employeesData.map(employee => ({
+            html: generateEmployeeCardHTML(employee),
+            name: employee.full_name,
+            id: employee.employee_id
+        }));
+        updatePaginationControls();
+    } else {
+        // Fallback: use the employees that are already on the page
+        const employeeCards = document.querySelectorAll('.employee-card');
+        allEmployees = Array.from(employeeCards).map(card => ({
+            html: card.outerHTML,
+            name: card.querySelector('h4').textContent,
+            id: card.querySelector('span').textContent
+        }));
+        updatePaginationControls();
+    }
+}
+
+function generateEmployeeCardHTML(employee) {
+    return `
+        <div class="border border-gray-200 rounded-lg p-4 employee-card">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-medium text-gray-900">${employee.full_name}</h4>
+                <span class="text-xs text-gray-500">${employee.employee_id}</span>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Monthly Salary:</span>
+                    <span class="font-medium">₱${parseFloat(employee.salary).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Daily Rate:</span>
+                    <span class="font-medium text-blue-600">₱${parseFloat(employee.daily_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Hourly Rate:</span>
+                    <span class="font-medium text-green-600">₱${parseFloat(employee.hourly_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Overtime Rate:</span>
+                    <span class="font-medium text-orange-600">₱${parseFloat(employee.overtime_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function changeEmployeePage(direction) {
+    const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
+    const newPage = currentEmployeePage + direction;
+    
+    if (newPage < 1 || newPage > totalPages) {
+        return;
+    }
+    
+    currentEmployeePage = newPage;
+    updateEmployeeDisplay();
+    updatePaginationControls();
+}
+
+function updateEmployeeDisplay() {
+    const container = document.getElementById('employeeCardsContainer');
+    const startIndex = (currentEmployeePage - 1) * employeesPerPage;
+    const endIndex = startIndex + employeesPerPage;
+    const currentEmployees = allEmployees.slice(startIndex, endIndex);
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Add current page employees
+    currentEmployees.forEach(employee => {
+        const div = document.createElement('div');
+        div.innerHTML = employee.html;
+        container.appendChild(div.firstElementChild);
+    });
+}
+
+function updatePaginationControls() {
+    const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
+    const startIndex = (currentEmployeePage - 1) * employeesPerPage + 1;
+    const endIndex = Math.min(currentEmployeePage * employeesPerPage, allEmployees.length);
+    
+    // Update page info
+    document.getElementById('employeePaginationInfo').textContent = 
+        `Showing ${startIndex}-${endIndex} of ${allEmployees.length} employees`;
+    
+    // Update page numbers
+    document.getElementById('currentEmployeePage').textContent = currentEmployeePage;
+    document.getElementById('totalEmployeePages').textContent = totalPages;
+    
+    // Update button states
+    const prevButton = document.getElementById('prevEmployeePage');
+    const nextButton = document.getElementById('nextEmployeePage');
+    
+    prevButton.disabled = currentEmployeePage === 1;
+    nextButton.disabled = currentEmployeePage === totalPages;
+    
+    if (prevButton.disabled) {
+        prevButton.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        prevButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+    
+    if (nextButton.disabled) {
+        nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+// Initialize calendar
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize with current month
+    setDateRange('thisMonth');
+    
+    // Initialize employee pagination
+    initializeEmployeeData();
+    updatePaginationControls();
+    
+    // Close calendar when clicking outside
+    document.addEventListener('click', function(e) {
+        const calendarPopup = document.getElementById('calendarPopup');
+        const dateRangeButton = document.getElementById('dateRangeButton');
+        
+        if (!calendarPopup.contains(e.target) && !dateRangeButton.contains(e.target)) {
+            calendarPopup.classList.add('hidden');
+        }
+    });
 });
 </script>
 @endsection

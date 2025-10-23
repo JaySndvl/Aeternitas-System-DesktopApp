@@ -292,10 +292,10 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">
-                                    <button class="text-blue-600 hover:text-blue-900 transition-colors" title="Edit">
+                                    <a href="{{ route('attendance.edit-record', $record->id) }}" class="text-blue-600 hover:text-blue-900 transition-colors" title="Edit">
                                         <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="text-red-600 hover:text-red-900 transition-colors" title="Delete">
+                                    </a>
+                                    <button onclick="openDeleteModal('{{ $record->id }}', '{{ $record->employee->full_name }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')" class="text-red-600 hover:text-red-900 transition-colors" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -450,10 +450,10 @@
                             </div>
                         </div>
                         <div class="flex justify-end space-x-2">
-                            <button class="text-blue-600 hover:text-blue-900 transition-colors">
+                            <a href="{{ route('attendance.edit-record', $record->id) }}" class="text-blue-600 hover:text-blue-900 transition-colors">
                                 <i class="fas fa-edit mr-1"></i>Edit
-                            </button>
-                            <button class="text-red-600 hover:text-red-900 transition-colors">
+                            </a>
+                            <button onclick="openDeleteModal('{{ $record->id }}', '{{ $record->employee->full_name }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')" class="text-red-600 hover:text-red-900 transition-colors">
                                 <i class="fas fa-trash mr-1"></i>Delete
                             </button>
                         </div>
@@ -477,6 +477,39 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden transition-opacity duration-300">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="text-center">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Delete Attendance Record</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    Are you sure you want to delete the attendance record for 
+                    <span id="deleteEmployeeName" class="font-medium text-gray-900"></span> 
+                    on <span id="deleteDate" class="font-medium text-gray-900"></span>?
+                </p>
+                <p class="text-xs text-red-600 mb-6">This action cannot be undone.</p>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex justify-center space-x-3">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fas fa-trash mr-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function applyFilters() {
     const employee = document.getElementById('employee').value;
@@ -487,5 +520,86 @@ function applyFilters() {
     // This will be implemented when backend is ready
     console.log('Applying filters:', { employee, department, dateFrom, dateTo });
 }
+
+// Global variables for delete modal
+let deleteRecordId = null;
+
+function openDeleteModal(recordId, employeeName, date) {
+    deleteRecordId = recordId;
+    document.getElementById('deleteEmployeeName').textContent = employeeName;
+    document.getElementById('deleteDate').textContent = date;
+    
+    const modal = document.getElementById('deleteModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    modal.classList.remove('hidden');
+    
+    // Trigger animation after a brief delay to ensure the modal is visible
+    setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    const modalContent = document.getElementById('modalContent');
+    
+    // Start closing animation
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modalContent.classList.add('scale-95', 'opacity-0');
+    
+    // Hide modal after animation completes
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        deleteRecordId = null;
+    }, 300);
+}
+
+function confirmDelete() {
+    if (deleteRecordId) {
+        // Create and submit delete form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/attendance/delete-record/${deleteRecordId}`;
+        
+        // Add CSRF token
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = '{{ csrf_token() }}';
+        form.appendChild(csrfToken);
+        
+        // Add method override for DELETE
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
 </script>
+
+<!-- Hidden delete form -->
+<form id="delete-form" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
 @endsection
