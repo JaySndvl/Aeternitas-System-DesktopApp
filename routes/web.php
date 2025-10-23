@@ -115,6 +115,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/', [App\Http\Controllers\Web\PeriodManagementController::class, 'store'])->name('store');
             Route::get('/{period}', [App\Http\Controllers\Web\PeriodManagementController::class, 'show'])->name('show');
             Route::delete('/{period}', [App\Http\Controllers\Web\PeriodManagementController::class, 'destroy'])->name('destroy');
+            
+            // Payroll integration routes
+            Route::get('/{period}/preview-payroll', [App\Http\Controllers\Web\PeriodManagementController::class, 'previewPayroll'])->name('preview-payroll');
+            Route::post('/{period}/generate-payroll', [App\Http\Controllers\Web\PeriodManagementController::class, 'generatePayroll'])->name('generate-payroll');
+            Route::get('/{period}/payroll-summary', [App\Http\Controllers\Web\PeriodManagementController::class, 'showPayrollSummary'])->name('payroll-summary');
+            Route::get('/{period}/export-payroll', [App\Http\Controllers\Web\PeriodManagementController::class, 'exportPayroll'])->name('export-payroll');
         });
         
         // Overtime routes

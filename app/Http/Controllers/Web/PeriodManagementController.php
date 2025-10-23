@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Models\EmployeeSchedule;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceLog;
+use App\Models\Payroll;
+use App\Services\PayrollGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -216,19 +218,31 @@ class PeriodManagementController extends Controller
                 // Determine attendance status
                 $attendanceStatus = $this->getAttendanceStatus($attendanceRecord, $schedule);
                 
-                // Calculate worked hours and overtime
-                $workedHours = $this->calculateWorkedHours($attendanceRecord, $schedule);
-                $scheduledHours = $this->calculateScheduledHours($attendanceRecord, $schedule);
-                $morningOvertime = $this->calculateMorningOvertime($attendanceRecord, $schedule);
-                $eveningOvertime = $this->calculateEveningOvertime($attendanceRecord, $schedule);
-                $overtime = $this->calculateOvertime($attendanceRecord, $schedule);
-                $nightDifferentialHours = $attendanceRecord ? $attendanceRecord->calculateNightShiftHours() : 0;
-                $lateMinutes = $this->calculateLateMinutes($attendanceRecord, $schedule);
-                $isNightShift = $attendanceRecord ? $attendanceRecord->isNightShift() : false;
+                // Initialize default values for non-working days
+                $workedHours = '—';
+                $scheduledHours = '—';
+                $morningOvertime = 0;
+                $eveningOvertime = 0;
+                $overtime = 0;
+                $nightDifferentialHours = 0;
+                $lateMinutes = 0;
+                $isNightShift = false;
+                
+                // Only calculate attendance metrics if schedule status is 'Working' or 'Regular Holiday' or 'Special Holiday'
+                if (in_array($scheduleStatus, ['Working', 'Regular Holiday', 'Special Holiday'])) {
+                    $workedHours = $this->calculateWorkedHours($attendanceRecord, $schedule);
+                    $scheduledHours = $this->calculateScheduledHours($attendanceRecord, $schedule);
+                    $morningOvertime = $this->calculateMorningOvertime($attendanceRecord, $schedule);
+                    $eveningOvertime = $this->calculateEveningOvertime($attendanceRecord, $schedule);
+                    $overtime = $this->calculateOvertime($attendanceRecord, $schedule);
+                    $nightDifferentialHours = $attendanceRecord ? $attendanceRecord->calculateNightShiftHours() : 0;
+                    $lateMinutes = $this->calculateLateMinutes($attendanceRecord, $schedule);
+                    $isNightShift = $attendanceRecord ? $attendanceRecord->isNightShift() : false;
+                }
                 
                 // Format times
                 $scheduleInOut = $this->formatScheduleTime($schedule);
-                $actualInOut = $this->formatActualTime($attendanceRecord);
+                $actualInOut = $this->formatActualTime($attendanceRecord, $scheduleStatus);
                 $workingHours = $this->calculateWorkingHours($schedule);
                 
                 // Create combined status - if both are Day Off, just show Day Off
@@ -272,7 +286,7 @@ class PeriodManagementController extends Controller
     private function getScheduleStatus($schedule)
     {
         if (!$schedule) {
-            return 'Day Off'; // Mark as Day Off if no schedule
+            return 'Working'; // Default to Working with 9-6 schedule if no schedule exists
         }
         
         switch ($schedule->status) {
@@ -288,7 +302,7 @@ class PeriodManagementController extends Controller
             case 'Leave':
                 return 'Leave';
             default:
-                return 'Day Off'; // Default to Day Off for unknown status
+                return 'Working'; // Default to Working for unknown status (applies default 9-6 schedule)
         }
     }
     
@@ -522,20 +536,8 @@ class PeriodManagementController extends Controller
         
         return $result ?: '0 hrs';
     }
-    
-    /**
-     * Calculate late minutes when employee clocks in after scheduled start time
-     * 
-     * This method calculates how many minutes an employee was late in arriving:
-     * 1. Compares actual time_in with scheduled time_in (actual or default)
-     * 2. Returns 0 if employee clocked in on time or early
-     * 3. Returns positive minutes if employee clocked in late
-     * 4. Returns 0 for Holiday/Leave status (no late calculation)
-     * 
-     * @param AttendanceRecord|null $attendanceRecord Employee's attendance record
-     * @param EmployeeSchedule|null $schedule Employee's schedule for the day
-     * @return int Late minutes (0 if not late)
-     */
+   
+
     private function calculateLateMinutes($attendanceRecord, $schedule)
     {
         if (
@@ -572,21 +574,7 @@ class PeriodManagementController extends Controller
         return 0; // Not late
     }
     
-    /**
-     * Get effective schedule (actual schedule or default schedule)
-     * 
-     * This method checks the schedule status first:
-     * - If schedule exists and is "Working" with complete time data, use it
-     * - If schedule status is "Holiday", "Leave", or "Day Off", don't use default schedule
-     * - If no schedule (null) or incomplete schedule for "Working" status, use default
-     * 
-     * SPECIAL CASE: For holidays, if employee has attendance (time_in/time_out), 
-     * use default schedule for calculations (holiday work)
-     * 
-     * @param EmployeeSchedule|null $schedule
-     * @param AttendanceRecord|null $attendanceRecord Optional attendance record for holiday work detection
-     * @return array|null Array with 'time_in' and 'time_out' keys, or null if no schedule should be applied
-     */
+   
     private function getEffectiveSchedule($schedule, $attendanceRecord = null)
     {
         // If no schedule at all (null), use default schedule
@@ -657,8 +645,13 @@ class PeriodManagementController extends Controller
     /**
      * Format actual time
      */
-    private function formatActualTime($attendanceRecord)
+    private function formatActualTime($attendanceRecord, $scheduleStatus = null)
     {
+        // If schedule status is non-working, show dashes regardless of attendance
+        if (in_array($scheduleStatus, ['Day Off', 'Leave', 'Rest Day'])) {
+            return '—';
+        }
+        
         if (!$attendanceRecord) {
             return '—';
         }
@@ -697,30 +690,6 @@ class PeriodManagementController extends Controller
         return $this->formatHoursToReadable($workingHours);
     }
     
-    /**
-     * Calculate worked hours from actual attendance with lunch break deduction
-     * 
-     * This method calculates the actual hours worked by an employee:
-     * 1. Validates that both time_in and time_out exist
-     * 2. Checks if time_in is later than schedule_out (invalid attendance)
-     * 3. Checks if both times are completely outside scheduled range
-     * 4. INCLUDES early time-in minutes in total worked hours
-     * 5. Calculates total duration and subtracts 1 hour for lunch break
-     * 6. Ensures non-negative result using max(0, ...)
-     * 
-     * Key Features:
-     * - Uses time-only comparison to avoid datetime issues
-     * - Automatically deducts 1 hour for lunch break
-     * - INCLUDES early time-in minutes in worked hours calculation
-     * - Uses effective schedule (actual or default 9:00-18:00)
-     * - Returns "—" for Holiday/Leave status (no worked hours calculation)
-     * - Returns "0 hrs" for invalid attendance
-     * - Returns "—" for missing time data
-     * 
-     * @param AttendanceRecord|null $attendanceRecord Employee's attendance record
-     * @param EmployeeSchedule|null $schedule Employee's schedule for the day
-     * @return string Worked hours formatted as "X hrs Y mins" or "0 hrs" or "—"
-     */
     private function calculateWorkedHours($attendanceRecord, $schedule = null)
     {
         if (!$attendanceRecord || !$attendanceRecord->time_in || !$attendanceRecord->time_out) {
@@ -733,7 +702,8 @@ class PeriodManagementController extends Controller
         // If no effective schedule (Holiday/Leave), return appropriate display
         if (!$effectiveSchedule) {
             $scheduleStatus = $this->getScheduleStatus($schedule);
-            return $scheduleStatus; // Return "Holiday" or "Leave"
+            // Return dash for Day Off, otherwise return the status
+            return $scheduleStatus === 'Day Off' ? '—' : $scheduleStatus;
         }
         
         $timeIn = Carbon::parse($attendanceRecord->time_in);
@@ -769,30 +739,7 @@ class PeriodManagementController extends Controller
         
         return $this->formatHoursToReadable($workedHours);
     }
-    
-    /**
-     * Calculate scheduled hours (hours worked within the scheduled timeframe)
-     * 
-     * This method calculates the hours worked by an employee within their scheduled
-     * timeframe (between schedule_in and schedule_out), excluding overtime:
-     * 1. Validates that both time_in and time_out exist
-     * 2. Gets effective schedule (actual or default)
-     * 3. Calculates overlap between actual work time and scheduled time
-     * 4. Returns hours worked within schedule, excluding overtime periods
-     * 
-     * Key Features:
-     * - Uses time-only comparison to avoid datetime issues
-     * - Calculates overlap between actual and scheduled timeframes
-     * - Excludes overtime periods (before schedule_in or after schedule_out)
-     * - Uses effective schedule (actual or default 9:00-18:00)
-     * - Returns "—" for Holiday/Leave status (no scheduled hours calculation)
-     * - Returns "0 hrs" for invalid attendance or no overlap
-     * - Returns "—" for missing time data
-     * 
-     * @param AttendanceRecord|null $attendanceRecord Employee's attendance record
-     * @param EmployeeSchedule|null $schedule Employee's schedule for the day
-     * @return string Scheduled hours formatted as "X hrs Y mins" or "0 hrs" or "—"
-     */
+
     private function calculateScheduledHours($attendanceRecord, $schedule = null)
     {
         if (!$attendanceRecord || !$attendanceRecord->time_in || !$attendanceRecord->time_out) {
@@ -805,7 +752,8 @@ class PeriodManagementController extends Controller
         // If no effective schedule (Holiday/Leave), return appropriate display
         if (!$effectiveSchedule) {
             $scheduleStatus = $this->getScheduleStatus($schedule);
-            return $scheduleStatus; // Return "Holiday" or "Leave"
+            // Return dash for Day Off, otherwise return the status
+            return $scheduleStatus === 'Day Off' ? '—' : $scheduleStatus;
         }
         
         $timeIn = Carbon::parse($attendanceRecord->time_in);
@@ -910,6 +858,301 @@ class PeriodManagementController extends Controller
 
 
 
+
+    /**
+     * Preview payroll for a specific period (without saving)
+     */
+    public function previewPayroll(Request $request, $periodId)
+    {
+        $user = Auth::user();
+        
+        // Get periods from session
+        $periods = session('periods', []);
+        
+        // Find the specific period
+        $period = null;
+        foreach ($periods as $p) {
+            if ($p['id'] == $periodId) {
+                $period = $p;
+                break;
+            }
+        }
+        
+        if (!$period) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'Period not found.');
+        }
+        
+        try {
+            // Convert to Carbon dates
+            $startDate = Carbon::parse($period['start_date']);
+            $endDate = Carbon::parse($period['end_date']);
+            
+            // Get employees for the period
+            $employees = Employee::with('department');
+            
+            // Apply department filter if specified
+            if (!empty($period['department_id'])) {
+                $employees = $employees->where('department_id', $period['department_id']);
+            }
+            
+            // Apply specific employee filter if specified
+            if (!empty($period['employee_ids']) && is_array($period['employee_ids'])) {
+                $employees = $employees->whereIn('id', $period['employee_ids']);
+            }
+            
+            $employees = $employees->get();
+            
+            if ($employees->isEmpty()) {
+                return redirect()->route('attendance.period-management.show', $periodId)
+                    ->with('error', 'No employees found for the specified criteria.');
+            }
+            
+            // Force refresh comprehensive attendance data (clear any potential caching)
+            $comprehensiveData = $this->getComprehensiveAttendanceData($startDate, $endDate, $employees);
+            
+            // Generate payroll preview (without saving to database)
+            $payrollService = new PayrollGenerationService();
+            $previewPayrolls = $payrollService->generatePayrollPreview($period, $comprehensiveData);
+            
+            // Add employee information to preview data
+            foreach ($previewPayrolls as &$previewPayroll) {
+                $employee = $employees->firstWhere('id', $previewPayroll['employee_id']);
+                if ($employee) {
+                    $previewPayroll['employee_name'] = $employee->full_name;
+                    $previewPayroll['employee_code'] = $employee->employee_code;
+                    $previewPayroll['department_name'] = $employee->department->name ?? 'N/A';
+                }
+            }
+            
+            // Store preview data in session for approval with timestamp
+            $generatedAt = now();
+            session(['payroll_preview' => [
+                'period' => $period,
+                'payrolls' => $previewPayrolls,
+                'generated_at' => $generatedAt,
+                'data_refreshed' => true
+            ]]);
+            
+            // Calculate summary statistics
+            $summaryData = [
+                'total_employees' => count($previewPayrolls),
+                'total_basic_salary' => collect($previewPayrolls)->sum('basic_salary'),
+                'total_holiday_basic_pay' => collect($previewPayrolls)->sum('holiday_basic_pay'),
+                'total_holiday_premium' => collect($previewPayrolls)->sum('holiday_premium'),
+                'total_special_holiday_premium' => collect($previewPayrolls)->sum('special_holiday_premium'),
+                'total_overtime_pay' => collect($previewPayrolls)->sum(function($p) { return $p['overtime_hours'] * $p['overtime_rate']; }),
+                'total_bonuses' => collect($previewPayrolls)->sum('bonuses'),
+                'total_deductions' => collect($previewPayrolls)->sum('deductions'),
+                'total_tax' => collect($previewPayrolls)->sum('tax_amount'),
+                'total_gross_pay' => collect($previewPayrolls)->sum('gross_pay'),
+                'total_net_pay' => collect($previewPayrolls)->sum('net_pay'),
+            ];
+            
+            // Add success message to indicate data was refreshed
+            $request->session()->flash('success', 'Payroll preview generated successfully with fresh data from ' . $generatedAt->format('M d, Y H:i:s'));
+            
+            return view('attendance.period-management.payroll-preview', compact('period', 'previewPayrolls', 'summaryData', 'generatedAt', 'user'));
+            
+        } catch (\Exception $e) {
+            Log::error('Payroll preview generation failed: ' . $e->getMessage());
+            return redirect()->route('attendance.period-management.show', $periodId)
+                ->with('error', 'Failed to generate payroll preview: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate payroll for a specific period
+     */
+    public function generatePayroll(Request $request, $periodId)
+    {
+        $user = Auth::user();
+        
+        // Get preview data from session
+        $previewData = session('payroll_preview');
+        
+        if (!$previewData || $previewData['period']['id'] != $periodId) {
+            return redirect()->route('attendance.period-management.show', $periodId)
+                ->with('error', 'No payroll preview found. Please generate preview first.');
+        }
+        
+        try {
+            $period = $previewData['period'];
+            $previewPayrolls = $previewData['payrolls'];
+            
+            // Convert preview data to actual payroll records
+            $generatedPayrolls = [];
+            foreach ($previewPayrolls as $previewPayroll) {
+                $payroll = Payroll::create([
+                    'employee_id' => $previewPayroll['employee_id'],
+                    'pay_period_start' => $previewPayroll['pay_period_start'],
+                    'pay_period_end' => $previewPayroll['pay_period_end'],
+                    'basic_salary' => $previewPayroll['basic_salary'],
+                    'holiday_basic_pay' => $previewPayroll['holiday_basic_pay'],
+                    'holiday_premium' => $previewPayroll['holiday_premium'],
+                    'special_holiday_premium' => $previewPayroll['special_holiday_premium'],
+                    'overtime_hours' => $previewPayroll['overtime_hours'],
+                    'overtime_rate' => $previewPayroll['overtime_rate'],
+                    'scheduled_hours' => $previewPayroll['basic_salary_details']['total_scheduled_hours'] ?? 0,
+                    'bonuses' => $previewPayroll['bonuses'],
+                    'deductions' => $previewPayroll['deductions'],
+                    'tax_amount' => $previewPayroll['tax_amount'],
+                    'gross_pay' => $previewPayroll['gross_pay'],
+                    'net_pay' => $previewPayroll['net_pay'],
+                    'status' => 'pending',
+                ]);
+                
+                $generatedPayrolls[] = $payroll;
+            }
+            
+            // Clear preview data from session
+            session()->forget('payroll_preview');
+            
+            $message = count($generatedPayrolls) . ' payroll record(s) generated successfully.';
+            
+            return redirect()->route('attendance.period-management.show', $periodId)
+                ->with('success', $message);
+                
+        } catch (\Exception $e) {
+            return redirect()->route('attendance.period-management.show', $periodId)
+                ->with('error', 'Failed to generate payroll: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show payroll summary for a specific period
+     */
+    public function showPayrollSummary(Request $request, $periodId)
+    {
+        $user = Auth::user();
+        
+        // Get periods from session
+        $periods = session('periods', []);
+        
+        // Find the specific period
+        $period = collect($periods)->firstWhere('id', $periodId);
+        
+        if (!$period) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'Period not found.');
+        }
+        
+        // Convert to Carbon dates
+        $startDate = Carbon::parse($period['start_date']);
+        $endDate = Carbon::parse($period['end_date']);
+        
+        // Get payroll records for this period
+        $payrolls = Payroll::where('pay_period_start', $startDate->format('Y-m-d'))
+            ->where('pay_period_end', $endDate->format('Y-m-d'))
+            ->with('employee.department')
+            ->get();
+        
+        // Calculate summary statistics
+        $summaryData = [
+            'total_employees' => $payrolls->count(),
+            'total_basic_salary' => $payrolls->sum('basic_salary'),
+            'total_overtime_hours' => $payrolls->sum('overtime_hours'),
+            'total_overtime_pay' => $payrolls->sum('overtime_hours') * $payrolls->avg('overtime_rate'),
+            'total_bonuses' => $payrolls->sum('bonuses'),
+            'total_deductions' => $payrolls->sum('deductions'),
+            'total_tax' => $payrolls->sum('tax_amount'),
+            'total_gross_pay' => $payrolls->sum('gross_pay'),
+            'total_net_pay' => $payrolls->sum('net_pay'),
+        ];
+        
+        // Get current filter state for back navigation
+        $currentFilters = $this->getFilterState($request);
+        
+        return view('attendance.period-management.payroll-summary', compact(
+            'period', 
+            'user', 
+            'currentFilters', 
+            'payrolls',
+            'summaryData'
+        ));
+    }
+
+    /**
+     * Export payroll to CSV
+     */
+    public function exportPayroll(Request $request, $periodId)
+    {
+        $user = Auth::user();
+        
+        // Get periods from session
+        $periods = session('periods', []);
+        
+        // Find the specific period
+        $period = collect($periods)->firstWhere('id', $periodId);
+        
+        if (!$period) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'Period not found.');
+        }
+        
+        // Convert to Carbon dates
+        $startDate = Carbon::parse($period['start_date']);
+        $endDate = Carbon::parse($period['end_date']);
+        
+        // Get payroll records for this period
+        $payrolls = Payroll::where('pay_period_start', $startDate->format('Y-m-d'))
+            ->where('pay_period_end', $endDate->format('Y-m-d'))
+            ->with('employee.department')
+            ->get();
+        
+        $filename = 'payroll_' . $period['name'] . '_' . $startDate->format('Y-m-d') . '_to_' . $endDate->format('Y-m-d') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+        
+        $callback = function() use ($payrolls) {
+            $file = fopen('php://output', 'w');
+            
+            // CSV headers
+            fputcsv($file, [
+                'Employee Code',
+                'Employee Name',
+                'Department',
+                'Basic Salary',
+                'Scheduled Hours',
+                'Overtime Hours',
+                'Overtime Rate',
+                'Overtime Pay',
+                'Bonuses',
+                'Deductions',
+                'Tax Amount',
+                'Gross Pay',
+                'Net Pay',
+                'Status'
+            ]);
+            
+            // CSV data
+            foreach ($payrolls as $payroll) {
+                fputcsv($file, [
+                    $payroll->employee->employee_id,
+                    $payroll->employee->full_name,
+                    $payroll->employee->department->name ?? 'N/A',
+                    number_format($payroll->basic_salary + $payroll->holiday_basic_pay, 2),
+                    number_format($payroll->scheduled_hours, 2),
+                    number_format($payroll->overtime_hours, 2),
+                    number_format($payroll->overtime_rate, 2),
+                    number_format($payroll->overtime_hours * $payroll->overtime_rate, 2),
+                    number_format($payroll->bonuses, 2),
+                    number_format($payroll->deductions, 2),
+                    number_format($payroll->tax_amount, 2),
+                    number_format($payroll->gross_pay, 2),
+                    number_format($payroll->net_pay, 2),
+                    $payroll->status
+                ]);
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
+    }
 
     /**
      * Get current filter state from request
