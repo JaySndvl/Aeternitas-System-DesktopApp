@@ -146,6 +146,7 @@
                                         <option value="Working" {{ old('status') == 'Working' ? 'selected' : '' }}>Working</option>
                                         <option value="Day Off" {{ old('status') == 'Day Off' ? 'selected' : '' }}>Day Off</option>
                                         <option value="Leave" {{ old('status') == 'Leave' ? 'selected' : '' }}>Leave</option>
+                                        <option value="Absent" {{ old('status') == 'Absent' ? 'selected' : '' }}>Absent</option>
                                         <option value="Regular Holiday" {{ old('status') == 'Regular Holiday' ? 'selected' : '' }}>Regular Holiday</option>
                                         <option value="Special Holiday" {{ old('status') == 'Special Holiday' ? 'selected' : '' }}>Special Holiday</option>
                                         <option value="Overtime" {{ old('status') == 'Overtime' ? 'selected' : '' }}>Overtime</option>
@@ -236,7 +237,7 @@ document.getElementById('status').addEventListener('change', function() {
     const timeInField = document.getElementById('time_in');
     const timeOutField = document.getElementById('time_out');
     
-    if (this.value === 'Working' || this.value === 'Overtime') {
+    if (this.value === 'Working' || this.value === 'Overtime' || this.value === 'Regular Holiday' || this.value === 'Special Holiday') {
         timeFields.style.display = 'grid';
         timeInField.required = true;
         timeOutField.required = true;
@@ -259,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize time fields visibility
     const statusSelect = document.getElementById('status');
-    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime') {
+    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime' || statusSelect.value === 'Regular Holiday' || statusSelect.value === 'Special Holiday') {
         document.getElementById('timeFields').style.display = 'grid';
     }
 });

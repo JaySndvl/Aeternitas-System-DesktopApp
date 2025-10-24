@@ -142,9 +142,18 @@ class ScheduleV2Controller extends Controller
             'date' => 'required|date',
             'time_in' => 'sometimes|nullable|date_format:H:i',
             'time_out' => 'sometimes|nullable|date_format:H:i',
-            'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
+            'status' => 'required|in:Working,Day Off,Leave,Absent,Regular Holiday,Special Holiday,Overtime',
             'notes' => 'nullable|string|max:500'
         ]);
+
+        // Additional validation for holiday statuses
+        if (in_array($request->status, ['Regular Holiday', 'Special Holiday'])) {
+            if (!$request->time_in || !$request->time_out) {
+                return redirect()->back()
+                    ->withErrors(['time_in' => 'Time in and time out are required for holiday statuses.'])
+                    ->withInput();
+            }
+        }
 
         // Additional validation: if time_out is provided, it should be after time_in
         if ($request->time_in && $request->time_out) {
@@ -183,12 +192,12 @@ class ScheduleV2Controller extends Controller
         ];
 
         // Handle time fields based on status
-        if (in_array($request->status, ['Working', 'Overtime'])) {
-            // For working statuses, use the provided time values
+        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday'])) {
+            // For working and holiday statuses, use the provided time values
             $scheduleData['time_in'] = $request->time_in;
             $scheduleData['time_out'] = $request->time_out;
         } else {
-            // For non-working statuses (Day Off, Leave, Regular Holiday, Special Holiday), set time values to null
+            // For non-working statuses (Day Off, Leave, Absent), set time values to null
             $scheduleData['time_in'] = null;
             $scheduleData['time_out'] = null;
         }
@@ -238,9 +247,18 @@ class ScheduleV2Controller extends Controller
         $request->validate([
             'time_in' => 'sometimes|nullable|date_format:H:i',
             'time_out' => 'sometimes|nullable|date_format:H:i',
-            'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
+            'status' => 'required|in:Working,Day Off,Leave,Absent,Regular Holiday,Special Holiday,Overtime',
             'notes' => 'nullable|string|max:500'
         ]);
+
+        // Additional validation for holiday statuses
+        if (in_array($request->status, ['Regular Holiday', 'Special Holiday'])) {
+            if (!$request->time_in || !$request->time_out) {
+                return redirect()->back()
+                    ->withErrors(['time_in' => 'Time in and time out are required for holiday statuses.'])
+                    ->withInput();
+            }
+        }
 
         // Additional validation: if time_out is provided, it should be after time_in
         if ($request->time_in && $request->time_out) {
@@ -261,12 +279,12 @@ class ScheduleV2Controller extends Controller
         ];
 
         // Handle time fields based on status
-        if (in_array($request->status, ['Working', 'Overtime'])) {
-            // For working statuses, use the provided time values
+        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday'])) {
+            // For working and holiday statuses, use the provided time values
             $updateData['time_in'] = $request->time_in;
             $updateData['time_out'] = $request->time_out;
         } else {
-            // For non-working statuses (Day Off, Leave, Regular Holiday, Special Holiday), clear time values
+            // For non-working statuses (Day Off, Leave, Absent), clear time values
             $updateData['time_in'] = null;
             $updateData['time_out'] = null;
         }
@@ -308,9 +326,19 @@ class ScheduleV2Controller extends Controller
                 'employee_schedules.*.dates.*' => 'date',
                 'time_in' => 'sometimes|nullable|date_format:H:i',
                 'time_out' => 'sometimes|nullable|date_format:H:i',
-                'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
+                'status' => 'required|in:Working,Day Off,Leave,Absent,Regular Holiday,Special Holiday,Overtime',
                 'notes' => 'nullable|string|max:500'
             ]);
+
+            // Additional validation for holiday statuses
+            if (in_array($request->status, ['Regular Holiday', 'Special Holiday'])) {
+                if (!$request->time_in || !$request->time_out) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Time in and time out are required for holiday statuses.'
+                    ], 422);
+                }
+            }
 
             $createdCount = 0;
 
@@ -335,7 +363,7 @@ class ScheduleV2Controller extends Controller
                         ];
 
                         // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime'])) {
+                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday'])) {
                             $scheduleData['time_in'] = $request->time_in;
                             $scheduleData['time_out'] = $request->time_out;
                         } else {
@@ -365,9 +393,19 @@ class ScheduleV2Controller extends Controller
                 'dates.*' => 'date',
                 'time_in' => 'sometimes|nullable|date_format:H:i',
                 'time_out' => 'sometimes|nullable|date_format:H:i',
-                'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
+                'status' => 'required|in:Working,Day Off,Leave,Absent,Regular Holiday,Special Holiday,Overtime',
                 'notes' => 'nullable|string|max:500'
             ]);
+
+            // Additional validation for holiday statuses
+            if (in_array($request->status, ['Regular Holiday', 'Special Holiday'])) {
+                if (!$request->time_in || !$request->time_out) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Time in and time out are required for holiday statuses.'
+                    ], 422);
+                }
+            }
 
             $createdCount = 0;
             $dates = $request->dates;
@@ -393,7 +431,7 @@ class ScheduleV2Controller extends Controller
                         ];
 
                         // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime'])) {
+                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday'])) {
                             $scheduleData['time_in'] = $request->time_in;
                             $scheduleData['time_out'] = $request->time_out;
                         } else {
@@ -421,9 +459,18 @@ class ScheduleV2Controller extends Controller
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'time_in' => 'sometimes|nullable|date_format:H:i',
                 'time_out' => 'sometimes|nullable|date_format:H:i',
-                'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
+                'status' => 'required|in:Working,Day Off,Leave,Absent,Regular Holiday,Special Holiday,Overtime',
                 'notes' => 'nullable|string|max:500'
             ]);
+
+            // Additional validation for holiday statuses
+            if (in_array($request->status, ['Regular Holiday', 'Special Holiday'])) {
+                if (!$request->time_in || !$request->time_out) {
+                    return redirect()->back()
+                        ->withErrors(['time_in' => 'Time in and time out are required for holiday statuses.'])
+                        ->withInput();
+                }
+            }
 
             $startDate = Carbon::parse($request->start_date);
             $endDate = Carbon::parse($request->end_date);
@@ -452,7 +499,7 @@ class ScheduleV2Controller extends Controller
                         ];
 
                         // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime'])) {
+                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday'])) {
                             $scheduleData['time_in'] = $request->time_in;
                             $scheduleData['time_out'] = $request->time_out;
                         } else {

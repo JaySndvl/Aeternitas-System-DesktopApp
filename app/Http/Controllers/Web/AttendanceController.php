@@ -134,7 +134,7 @@ class AttendanceController extends Controller
             'time_out' => 'nullable|date_format:H:i|after:time_in',
             'break_start' => 'nullable|date_format:H:i',
             'break_end' => 'nullable|date_format:H:i|after:break_start',
-            'status' => 'required|in:present,absent,late,half_day',
+            'status' => 'required|in:present,absent,absent_excused,absent_unexcused,absent_sick,absent_personal,late,half_day,on_leave',
             'notes' => 'nullable|string|max:500'
         ]);
 
@@ -892,7 +892,7 @@ public function schedule(Request $request)
             'time_out' => 'nullable|date_format:H:i|after:time_in',
             'break_start' => 'nullable|date_format:H:i',
             'break_end' => 'nullable|date_format:H:i|after:break_start',
-            'status' => 'required|in:present,absent,late,half_day',
+            'status' => 'required|in:present,absent,absent_excused,absent_unexcused,absent_sick,absent_personal,late,half_day,on_leave',
             'notes' => 'nullable|string|max:500'
         ]);
 

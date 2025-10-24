@@ -572,18 +572,35 @@ class PeriodManagementController extends Controller
         // Get schedule status for existing schedule
         $scheduleStatus = $this->getScheduleStatus($schedule);
         
-        // SPECIAL CASE: For holidays, if employee worked (has attendance), use default schedule
+        // SPECIAL CASE: For holidays, if employee worked (has attendance), use the actual schedule times
         if (($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday') && $attendanceRecord && 
             $attendanceRecord->time_in && $attendanceRecord->time_out) {
+            // Use the actual time_in and time_out from the schedule table for holidays
+            if ($schedule->time_in && $schedule->time_out) {
+                return [
+                    'time_in' => $schedule->time_in,
+                    'time_out' => $schedule->time_out
+                ];
+            }
+            // Fallback to default schedule if no times in schedule
             return [
                 'time_in' => '09:00:00',
                 'time_out' => '18:00:00'
             ];
         }
         
-        // If schedule status is Holiday, Leave, or Day Off, don't apply any schedule
-        if ($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday' || $scheduleStatus === 'Leave' || $scheduleStatus === 'Day Off') {
+        // If schedule status is Leave or Day Off, don't apply any schedule
+        if ($scheduleStatus === 'Leave' || $scheduleStatus === 'Day Off') {
             return null;
+        }
+        
+        // For holidays, if there are actual times in the schedule, use them
+        if (($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday') && 
+            $schedule->time_in && $schedule->time_out) {
+            return [
+                'time_in' => $schedule->time_in,
+                'time_out' => $schedule->time_out
+            ];
         }
         
         // If schedule exists and has time_in and time_out, use it
@@ -608,9 +625,16 @@ class PeriodManagementController extends Controller
     {
         $scheduleStatus = $this->getScheduleStatus($schedule);
         
-        // For holidays, show default schedule with holiday indicator
+        // For holidays, show actual schedule times if available
         if ($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday') {
-            return '09:00–18:00'; // Default schedule for holidays
+            // Use actual schedule times if available
+            if ($schedule && $schedule->time_in && $schedule->time_out) {
+                $timeIn = Carbon::parse($schedule->time_in)->format('H:i');
+                $timeOut = Carbon::parse($schedule->time_out)->format('H:i');
+                return "{$timeIn}–{$timeOut}";
+            }
+            // Fallback to default schedule for holidays
+            return '09:00–18:00';
         }
         
         $effectiveSchedule = $this->getEffectiveSchedule($schedule);
@@ -653,8 +677,17 @@ class PeriodManagementController extends Controller
     {
         $scheduleStatus = $this->getScheduleStatus($schedule);
         
-        // For holidays, show default working hours
+        // For holidays, calculate working hours from actual schedule times
         if ($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday') {
+            // Use the actual schedule times if available
+            if ($schedule && $schedule->time_in && $schedule->time_out) {
+                $timeIn = Carbon::parse($schedule->time_in);
+                $timeOut = Carbon::parse($schedule->time_out);
+                $totalHours = round($timeIn->diffInMinutes($timeOut) / 60, 2);
+                $workingHours = max(0, $totalHours - 1); // Subtract 1 hour for lunch break
+                return $this->formatHoursToReadable($workingHours);
+            }
+            // Fallback to default if no times in schedule
             return '8 hrs'; // Default working hours for holidays
         }
         

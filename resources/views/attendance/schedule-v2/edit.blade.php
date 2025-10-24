@@ -70,6 +70,7 @@
                         <option value="Working" {{ old('status', $schedule->status) == 'Working' ? 'selected' : '' }}>Working</option>
                         <option value="Day Off" {{ old('status', $schedule->status) == 'Day Off' ? 'selected' : '' }}>Day Off</option>
                         <option value="Leave" {{ old('status', $schedule->status) == 'Leave' ? 'selected' : '' }}>Leave</option>
+                        <option value="Absent" {{ old('status', $schedule->status) == 'Absent' ? 'selected' : '' }}>Absent</option>
                         <option value="Regular Holiday" {{ old('status', $schedule->status) == 'Regular Holiday' ? 'selected' : '' }}>Regular Holiday</option>
                         <option value="Special Holiday" {{ old('status', $schedule->status) == 'Special Holiday' ? 'selected' : '' }}>Special Holiday</option>
                         <option value="Overtime" {{ old('status', $schedule->status) == 'Overtime' ? 'selected' : '' }}>Overtime</option>
@@ -163,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusSelect = document.getElementById('status');
     
     // Initialize time fields visibility
-    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime') {
+    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime' || statusSelect.value === 'Regular Holiday' || statusSelect.value === 'Special Holiday') {
         document.getElementById('timeFields').style.display = 'grid';
     } else {
         document.getElementById('timeFields').style.display = 'none';
@@ -211,7 +212,7 @@ document.getElementById('status').addEventListener('change', function() {
     const timeInField = document.getElementById('time_in');
     const timeOutField = document.getElementById('time_out');
     
-    if (this.value === 'Working' || this.value === 'Overtime') {
+    if (this.value === 'Working' || this.value === 'Overtime' || this.value === 'Regular Holiday' || this.value === 'Special Holiday') {
         timeFields.style.display = 'grid';
         // Don't make fields required - let backend validation handle it
         timeInField.required = false;

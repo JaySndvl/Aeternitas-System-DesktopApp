@@ -1032,6 +1032,18 @@ function showDateReviewModal() {
     // Populate employee list in left panel
     populateSelectedEmployeesList();
     
+    // Initialize time fields visibility based on default status
+    const statusSelect = document.getElementById('statusSelect');
+    const timeFields = document.querySelector('.grid.grid-cols-2.gap-4');
+    if (statusSelect && timeFields) {
+        const status = statusSelect.value;
+        if (status === 'Working' || status === 'Overtime' || status === 'Regular Holiday' || status === 'Special Holiday') {
+            timeFields.style.display = 'grid';
+        } else {
+            timeFields.style.display = 'none';
+        }
+    }
+    
     // Show modal
     modal.classList.remove('hidden');
 }
@@ -1118,6 +1130,7 @@ function createDateReviewModal() {
                             <option value="Working">Working</option>
                             <option value="Day Off">Day Off</option>
                             <option value="Leave">Leave</option>
+                            <option value="Absent">Absent</option>
                             <option value="Regular Holiday">Regular Holiday</option>
                             <option value="Special Holiday">Special Holiday</option>
                             <option value="Overtime">Overtime</option>
@@ -1257,11 +1270,37 @@ function formatMultipleDates(datesArray) {
     }
 }
 
+// Add event listener for status change in the modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listener for status change in the modal
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'statusSelect') {
+            const status = e.target.value;
+            const timeFields = document.querySelector('.grid.grid-cols-2.gap-4');
+            
+            if (status === 'Working' || status === 'Overtime' || status === 'Regular Holiday' || status === 'Special Holiday') {
+                timeFields.style.display = 'grid';
+            } else {
+                timeFields.style.display = 'none';
+                // Clear time values for non-working statuses
+                document.getElementById('timeIn').value = '';
+                document.getElementById('timeOut').value = '';
+            }
+        }
+    });
+});
+
 function saveDateSchedule() {
     const status = document.getElementById('statusSelect').value;
     const timeIn = document.getElementById('timeIn').value;
     const timeOut = document.getElementById('timeOut').value;
     const notes = document.getElementById('notes').value;
+    
+    // Validate holiday statuses require time in/out
+    if ((status === 'Regular Holiday' || status === 'Special Holiday') && (!timeIn || !timeOut)) {
+        alert('Time in and time out are required for holiday statuses.');
+        return;
+    }
     
     // Prepare employee-specific data
     const employeeSchedules = [];
@@ -1294,6 +1333,9 @@ function saveDateSchedule() {
         notes: notes || null
     };
     
+    // Debug: Log the request data
+    console.log('Sending request data:', requestData);
+    
     // Send AJAX request
     fetch('{{ route("schedule-v2.bulk-create") }}', {
         method: 'POST',
@@ -1304,12 +1346,17 @@ function saveDateSchedule() {
         body: JSON.stringify(requestData)
     })
     .then(response => {
+        console.log('Response status:', response.status);
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.text().then(text => {
+                console.error('Error response:', text);
+                throw new Error(`HTTP error! status: ${response.status} - ${text}`);
+            });
         }
         return response.json();
     })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
             const totalSchedules = employeeSchedules.reduce((total, emp) => total + emp.dates.length, 0);
             showNotification(`Schedule created successfully for ${totalSchedules} schedule(s)!`, 'success');
