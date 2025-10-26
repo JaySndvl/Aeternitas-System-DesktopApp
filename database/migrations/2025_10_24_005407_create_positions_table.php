@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('code')->unique(); // Position code (e.g., "MGR", "SE", "RAF")
             $table->text('description')->nullable(); // Detailed description of the position
             $table->string('level')->nullable(); // Position level (e.g., "Senior", "Junior", "Lead")
-            $table->foreignId('department_id')->constrained('departments')->onDelete('cascade'); // Department this position belongs to
+            $table->uuid('department_id'); // Department this position belongs to
+            $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
             $table->decimal('min_salary', 10, 2)->nullable(); // Minimum salary for this position
             $table->decimal('max_salary', 10, 2)->nullable(); // Maximum salary for this position
             $table->boolean('is_active')->default(true); // Whether this position is currently active

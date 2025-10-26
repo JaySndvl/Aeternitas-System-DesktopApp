@@ -12,8 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Add 'Absent' to the employee_schedules status enum
-        DB::statement("ALTER TABLE employee_schedules MODIFY COLUMN status ENUM('Working', 'Day Off', 'Leave', 'Absent', 'Regular Holiday', 'Special Holiday', 'Overtime') DEFAULT 'Working'");
+        // SQLite doesn't support MODIFY COLUMN or ENUM
+        // The status column will accept any string value
+        // This migration is effectively a no-op for SQLite
     }
 
     /**
@@ -21,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Remove 'Absent' from the employee_schedules status enum
-        DB::statement("ALTER TABLE employee_schedules MODIFY COLUMN status ENUM('Working', 'Day Off', 'Leave', 'Regular Holiday', 'Special Holiday', 'Overtime') DEFAULT 'Working'");
+        // SQLite doesn't support MODIFY COLUMN or ENUM
+        // This migration is effectively a no-op for SQLite
     }
 };

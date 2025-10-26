@@ -12,16 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // First, add the new enum values to the existing enum
-        DB::statement("ALTER TABLE employee_schedules MODIFY COLUMN status ENUM('Working', 'Day Off', 'Leave', 'Holiday', 'Regular Holiday', 'Special Holiday', 'Overtime') DEFAULT 'Working'");
-
-        // Then, update existing 'Holiday' records to 'Regular Holiday'
+        // Update existing 'Holiday' records to 'Regular Holiday'
         DB::table('employee_schedules')
             ->where('status', 'Holiday')
             ->update(['status' => 'Regular Holiday']);
-
-        // Finally, remove the old 'Holiday' value from the enum
-        DB::statement("ALTER TABLE employee_schedules MODIFY COLUMN status ENUM('Working', 'Day Off', 'Leave', 'Regular Holiday', 'Special Holiday', 'Overtime') DEFAULT 'Working'");
     }
 
     /**
@@ -29,12 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // First, update 'Special Holiday' and 'Regular Holiday' back to 'Holiday'
+        // Update 'Regular Holiday' back to 'Holiday'
         DB::table('employee_schedules')
-            ->whereIn('status', ['Special Holiday', 'Regular Holiday'])
+            ->where('status', 'Regular Holiday')
             ->update(['status' => 'Holiday']);
-
-        // Then restore the original enum
-        DB::statement("ALTER TABLE employee_schedules MODIFY COLUMN status ENUM('Working', 'Day Off', 'Leave', 'Holiday', 'Overtime') DEFAULT 'Working'");
     }
 };
