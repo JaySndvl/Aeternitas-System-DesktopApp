@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusSelect = document.getElementById('status');
     
     // Initialize time fields visibility
-    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime' || statusSelect.value === 'Regular Holiday' || statusSelect.value === 'Special Holiday') {
+    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime' || statusSelect.value === 'Regular Holiday' || statusSelect.value === 'Special Holiday' || statusSelect.value === 'Day Off' || statusSelect.value === 'Leave') {
         document.getElementById('timeFields').style.display = 'grid';
     } else {
         document.getElementById('timeFields').style.display = 'none';
@@ -212,7 +212,7 @@ document.getElementById('status').addEventListener('change', function() {
     const timeInField = document.getElementById('time_in');
     const timeOutField = document.getElementById('time_out');
     
-    if (this.value === 'Working' || this.value === 'Overtime' || this.value === 'Regular Holiday' || this.value === 'Special Holiday') {
+    if (this.value === 'Working' || this.value === 'Overtime' || this.value === 'Regular Holiday' || this.value === 'Special Holiday' || this.value === 'Day Off' || this.value === 'Leave') {
         timeFields.style.display = 'grid';
         // Don't make fields required - let backend validation handle it
         timeInField.required = false;

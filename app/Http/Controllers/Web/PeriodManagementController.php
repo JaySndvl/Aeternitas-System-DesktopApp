@@ -214,8 +214,9 @@ class PeriodManagementController extends Controller
                 // Calculate attendance metrics if:
                 // 1. Schedule status is 'Working' or 'Regular Holiday' or 'Special Holiday'
                 // 2. Schedule status is 'Leave' AND employee has attendance (working on rest day with 1.2x premium)
+                // 3. Schedule status is 'Day Off' AND employee has attendance (emergency work)
                 $shouldCalculateMetrics = in_array($scheduleStatus, ['Working', 'Regular Holiday', 'Special Holiday']) ||
-                    ($scheduleStatus === 'Leave' && $attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out);
+                    (($scheduleStatus === 'Leave' || $scheduleStatus === 'Day Off') && $attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out);
                 
                 if ($shouldCalculateMetrics) {
                     $workedHours = $this->calculateWorkedHours($attendanceRecord, $schedule);
@@ -229,19 +230,27 @@ class PeriodManagementController extends Controller
                 }
                 
                 // Format times
-                $scheduleInOut = $this->formatScheduleTime($schedule);
+                $scheduleInOut = $this->formatScheduleTime($schedule, $attendanceRecord);
                 $actualInOut = $this->formatActualTime($attendanceRecord, $scheduleStatus);
-                $workingHours = $this->calculateWorkingHours($schedule);
+                $workingHours = $this->calculateWorkingHours($schedule, $attendanceRecord);
                 
-                // Create combined status - handle Leave days with attendance (rest day work)
-                // If employee worked on Leave day, show as "Rest Day - Present" (indicates premium pay)
+                // Create combined status - handle Leave and Day Off days with attendance (rest day work / emergency work)
+                // If employee worked on Leave day, show as "Leave - Present" (indicates premium pay)
+                // If employee worked on Day Off, show as "Day Off - Present" (indicates emergency work)
                 $combinedStatus = $scheduleStatus;
-                if ($scheduleStatus === 'Leave' && $attendanceStatus === 'Present') {
-                  
-                    $combinedStatus = 'Rest Day - Present';
+                if ($scheduleStatus === 'No Schedule') {
+                    // If no schedule, show attendance status or "No Schedule"
+                    if ($attendanceStatus === 'Present') {
+                        $combinedStatus = 'No Schedule - Present';
+                    } else {
+                        $combinedStatus = 'No Schedule';
+                    }
+                } elseif ($scheduleStatus === 'Leave' && $attendanceStatus === 'Present') {
+                    $combinedStatus = 'Leave - Present';
+                } elseif ($scheduleStatus === 'Day Off' && $attendanceStatus === 'Present') {
+                    $combinedStatus = 'Day Off - Present';
                 } elseif ($scheduleStatus === 'Leave') {
-                    
-                    $combinedStatus = 'Day Off';
+                    $combinedStatus = 'Leave';
                 } 
                 elseif ($scheduleStatus !== 'Day Off' || $attendanceStatus !== 'Day Off') {
                     $combinedStatus = $scheduleStatus . ' - ' . $attendanceStatus;
@@ -282,7 +291,7 @@ class PeriodManagementController extends Controller
     private function getScheduleStatus($schedule)
     {
         if (!$schedule) {
-            return 'Working'; // Default to Working with 9-6 schedule if no schedule exists
+            return 'No Schedule'; // No schedule exists for this day
         }
         
         switch ($schedule->status) {
@@ -305,21 +314,59 @@ class PeriodManagementController extends Controller
 
     private function getAttendanceStatus($attendanceRecord, $schedule = null)
     {
-        // Rule 0: If schedule is Day Off or Rest Day → always return 'Day Off' (no work allowed)
-        // Day Off status should never show as Present, even if there's attendance
+        // Rule 0: If there's no schedule, employee should not be marked as Absent
+        // If employee has attendance without schedule, return 'Present' (unscheduled work)
+        // If employee has no attendance and no schedule, return 'No Schedule'
+        if (!$schedule) {
+            if ($attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out) {
+                return 'Present'; // Employee worked without schedule (unscheduled work)
+            }
+            return 'No Schedule'; // No schedule and no attendance - not absent
+        }
+        
+        // Check if schedule has times
+        $hasScheduleTimes = $schedule->time_in && $schedule->time_out;
+        
+        // Rule 0: If schedule is Day Off or Rest Day → check if employee worked
+        // If employee worked on Day Off (called in for emergency), return 'Present'
+        // If schedule has times and no attendance, return 'Absent'
+        // If no schedule times and no attendance, return 'Day Off'
         if ($schedule && ($schedule->status === 'Day Off' || $schedule->status === 'Rest Day')) {
-            return 'Day Off'; // Always Day Off, regardless of attendance
+            // If employee has attendance (worked on Day Off - emergency work), return Present
+            if ($attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out) {
+                return 'Present'; // Employee worked on Day Off - emergency work
+            }
+            // If schedule has times but no attendance, return Absent
+            if ($hasScheduleTimes) {
+                return 'Absent'; // Schedule exists with times but no attendance
+            }
+            return 'Day Off'; // No schedule times and no attendance on Day Off
         }
         
         // Rule 0.5: If schedule is Leave → check if employee worked
         // If employee worked on Leave, return 'Present' (rest day work with 1.2x premium)
-        // If employee didn't work, return 'Day Off'
+        // If schedule has times and no attendance, return 'Absent'
+        // If no schedule times and no attendance, return 'Day Off'
         if ($schedule && $schedule->status === 'Leave') {
             // If employee has attendance (worked on Leave day/rest day), return Present
             if ($attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out) {
                 return 'Present'; // Employee worked on Leave day - will be paid 1.2x premium
             }
-            return 'Day Off'; // No attendance on Leave day
+            // If schedule has times but no attendance, return Absent
+            if ($hasScheduleTimes) {
+                return 'Absent'; // Schedule exists with times but no attendance
+            }
+            return 'Day Off'; // No schedule times and no attendance on Leave day
+        }
+        
+        // Rule 0.6: If schedule is Regular Holiday or Special Holiday
+        // If schedule has times and no attendance, return 'Absent'
+        if ($schedule && ($schedule->status === 'Regular Holiday' || $schedule->status === 'Special Holiday')) {
+            // If employee has attendance, will be handled by later rules
+            // If no attendance and schedule has times, return Absent
+            if (!$attendanceRecord && $hasScheduleTimes) {
+                return 'Absent'; // Schedule exists with times but no attendance
+            }
         }
         
         if (!$attendanceRecord) {
@@ -556,7 +603,7 @@ class PeriodManagementController extends Controller
    
     private function getEffectiveSchedule($schedule, $attendanceRecord = null)
     {
-        // If no schedule at all (null), use default schedule
+        // If no schedule at all (null), return default schedule (9am-6pm)
         if (!$schedule) {
             return [
                 'time_in' => '09:00:00',
@@ -567,7 +614,25 @@ class PeriodManagementController extends Controller
         // Get schedule status for existing schedule
         $scheduleStatus = $this->getScheduleStatus($schedule);
         
-        // If schedule status is Day Off, always return null (no schedule calculations)
+        // SPECIAL CASE: For Day Off days, if employee worked (has attendance), use schedule for calculations
+        // Employee is working on Day Off (emergency work)
+        if ($scheduleStatus === 'Day Off' && $attendanceRecord && 
+            $attendanceRecord->time_in && $attendanceRecord->time_out) {
+            // If schedule has times, use them
+            if ($schedule->time_in && $schedule->time_out) {
+                return [
+                    'time_in' => $schedule->time_in,
+                    'time_out' => $schedule->time_out
+                ];
+            }
+            // Fallback to default schedule if no times in schedule (for Day Off work calculations)
+            return [
+                'time_in' => '09:00:00',
+                'time_out' => '18:00:00'
+            ];
+        }
+        
+        // If schedule status is Day Off (without attendance), return null (no schedule calculations)
         if ($scheduleStatus === 'Day Off') {
             return null;
         }
@@ -639,27 +704,41 @@ class PeriodManagementController extends Controller
     /**
      * Format schedule time
      */
-    private function formatScheduleTime($schedule)
+    private function formatScheduleTime($schedule, $attendanceRecord = null)
     {
         $scheduleStatus = $this->getScheduleStatus($schedule);
         
-        // For holidays, show actual schedule times if available
-        if ($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday') {
-            // Use actual schedule times if available
-            if ($schedule && $schedule->time_in && $schedule->time_out) {
+        // If no schedule exists, show default time (9am-6pm)
+        if ($scheduleStatus === 'No Schedule') {
+            return '09:00–18:00';
+        }
+        
+        // Check if schedule has times
+        $hasScheduleTimes = $schedule && $schedule->time_in && $schedule->time_out;
+        // Check if employee has attendance
+        $hasAttendance = $attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out;
+        
+        // For holidays, Day Off, and Leave
+        if (in_array($scheduleStatus, ['Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
+            // If schedule has times, use them
+            if ($hasScheduleTimes) {
                 $timeIn = Carbon::parse($schedule->time_in)->format('H:i');
                 $timeOut = Carbon::parse($schedule->time_out)->format('H:i');
                 return "{$timeIn}–{$timeOut}";
             }
-            // Fallback to default schedule for holidays
-            return '09:00–18:00';
+            // If no schedule times but has attendance, use default time
+            if ($hasAttendance) {
+                return '09:00–18:00';
+            }
+            // If no schedule times and no attendance, show status text
+            return $scheduleStatus;
         }
         
         $effectiveSchedule = $this->getEffectiveSchedule($schedule);
         
-        // If no effective schedule (Leave/Day Off), return appropriate display
+        // If no effective schedule, use default
         if (!$effectiveSchedule) {
-            return $scheduleStatus; // Return "Leave" or "Day Off"
+            return '09:00–18:00'; // Default schedule
         }
         
         $timeIn = Carbon::parse($effectiveSchedule['time_in'])->format('H:i');
@@ -673,8 +752,15 @@ class PeriodManagementController extends Controller
      */
     private function formatActualTime($attendanceRecord, $scheduleStatus = null)
     {
-        // If schedule status is non-working, show dashes regardless of attendance
+        // If schedule status is non-working but employee has attendance (emergency work), show actual times
         if (in_array($scheduleStatus, ['Day Off', 'Leave', 'Rest Day'])) {
+            // Show actual times if employee worked (has attendance)
+            if ($attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out) {
+                $timeIn = Carbon::parse($attendanceRecord->time_in)->format('H:i');
+                $timeOut = Carbon::parse($attendanceRecord->time_out)->format('H:i');
+                return "{$timeIn}–{$timeOut}";
+            }
+            // No attendance on non-working day
             return '—';
         }
         
@@ -691,29 +777,43 @@ class PeriodManagementController extends Controller
     /**
      * Calculate working hours from schedule (subtract 1 hour for lunch break)
      */
-    private function calculateWorkingHours($schedule)
+    private function calculateWorkingHours($schedule, $attendanceRecord = null)
     {
         $scheduleStatus = $this->getScheduleStatus($schedule);
         
-        // For holidays, calculate working hours from actual schedule times
-        if ($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday') {
-            // Use the actual schedule times if available
-            if ($schedule && $schedule->time_in && $schedule->time_out) {
+        // If no schedule exists, show default working hours (8 hrs)
+        if ($scheduleStatus === 'No Schedule') {
+            return '8 hrs';
+        }
+        
+        // Check if schedule has times
+        $hasScheduleTimes = $schedule && $schedule->time_in && $schedule->time_out;
+        // Check if employee has attendance
+        $hasAttendance = $attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out;
+        
+        // For holidays, Day Off, and Leave
+        if (in_array($scheduleStatus, ['Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
+            // If schedule has times, calculate from them
+            if ($hasScheduleTimes) {
                 $timeIn = Carbon::parse($schedule->time_in);
                 $timeOut = Carbon::parse($schedule->time_out);
                 $totalHours = round($timeIn->diffInMinutes($timeOut) / 60, 2);
                 $workingHours = max(0, $totalHours - 1); // Subtract 1 hour for lunch break
                 return $this->formatHoursToReadable($workingHours);
             }
-            // Fallback to default if no times in schedule
-            return '8 hrs'; // Default working hours for holidays
+            // If no schedule times but has attendance, use default hours
+            if ($hasAttendance) {
+                return '8 hrs'; // Default working hours
+            }
+            // If no schedule times and no attendance, show status text
+            return $scheduleStatus;
         }
         
-            $effectiveSchedule = $this->getEffectiveSchedule($schedule, null);
+        $effectiveSchedule = $this->getEffectiveSchedule($schedule, null);
         
-        // If no effective schedule (Leave/Day Off), return appropriate display
+        // If no effective schedule, use default (9am-6pm = 8 hours)
         if (!$effectiveSchedule) {
-            return $scheduleStatus; // Return "Leave" or "Day Off"
+            return '8 hrs'; // Default working hours
         }
         
         $timeIn = Carbon::parse($effectiveSchedule['time_in']);

@@ -208,43 +208,9 @@
                                     @php
                                         $presentCount = $employeeRecords->where('attendance_status', 'Present')->count();
                                         $absentCount = $employeeRecords->where('attendance_status', 'Absent')->count();
-                                        $errorCount = $employeeRecords->where('attendance_status', 'Error')->count();
-                                        $totalMorningOvertime = $employeeRecords->sum('morning_overtime');
-                                        $totalEveningOvertime = $employeeRecords->sum('evening_overtime');
-                                        $totalOvertime = $employeeRecords->sum('overtime');
-                                        $lateInstances = $employeeRecords->where('late_minutes', '>', 0)->count();
-                                        $totalLateMinutes = $employeeRecords->sum('late_minutes');
-                                        
-                                        // Calculate total scheduled hours for this employee
-                                        $totalScheduledHours = 0;
-                                        foreach($employeeRecords as $record) {
-                                            if($record['scheduled_hours'] !== '—' && $record['scheduled_hours'] !== 'Holiday' && $record['scheduled_hours'] !== 'Leave' && $record['scheduled_hours'] !== 'Day Off') {
-                                                // Parse formatted hours back to decimal
-                                                if(preg_match('/(\d+)\s*hrs?\s*(\d+)\s*mins?/', $record['scheduled_hours'], $matches)) {
-                                                    $totalScheduledHours += (int)$matches[1] + ((int)$matches[2] / 60);
-                                                } elseif(preg_match('/(\d+)\s*hrs?/', $record['scheduled_hours'], $matches)) {
-                                                    $totalScheduledHours += (int)$matches[1];
-                                                } elseif(preg_match('/(\d+)\s*mins?/', $record['scheduled_hours'], $matches)) {
-                                                    $totalScheduledHours += (int)$matches[1] / 60;
-                                                }
-                                            }
-                                        }
                                     @endphp
-                                    <span class="text-green-600">{{ $presentCount }}P</span>
-                                    <span class="text-red-600">{{ $absentCount }}A</span>
-                                    <span class="text-yellow-600">{{ $errorCount }}E</span>
-                                    @if($totalScheduledHours > 0)
-                                        <span class="text-purple-600">{{ formatHoursToReadable($totalScheduledHours) }} Scheduled</span>
-                                    @endif
-                                    @if($totalMorningOvertime > 0)
-                                        <span class="text-green-600">{{ formatHoursToReadable($totalMorningOvertime) }} Pre-Shift OT</span>
-                                    @endif
-                                    @if($totalEveningOvertime > 0)
-                                        <span class="text-orange-600">{{ formatHoursToReadable($totalEveningOvertime) }} Post-Shift OT</span>
-                                    @endif
-                                    @if($lateInstances > 0)
-                                        <span class="text-red-600">{{ $lateInstances }}L ({{ $totalLateMinutes }}min)</span>
-                                    @endif
+                                    <span class="text-green-600 font-medium">{{ $presentCount }}P</span>
+                                    <span class="text-red-600 font-medium">{{ $absentCount }}A</span>
                                 </div>
                                 <div class="flex-shrink-0">
                                     <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
@@ -283,6 +249,10 @@
                                                 <span class="text-yellow-600 font-semibold">{{ $record['schedule_in_out'] }}</span>
                                             @elseif($record['schedule_status'] === 'Special Holiday')
                                                 <span class="text-pink-600 font-semibold">{{ $record['schedule_in_out'] }}</span>
+                                            @elseif($record['schedule_status'] === 'Day Off')
+                                                <span class="text-slate-600 font-medium">{{ $record['schedule_in_out'] }}</span>
+                                            @elseif($record['schedule_status'] === 'Leave')
+                                                <span class="text-purple-600 font-medium">{{ $record['schedule_in_out'] }}</span>
                                             @elseif($record['schedule_status'] === 'Holiday')
                                                 <span class="text-red-600 font-medium">{{ $record['schedule_in_out'] }}</span>
                                             @else
@@ -294,6 +264,10 @@
                                                 <span class="text-yellow-600 font-semibold">{{ $record['working_hours'] }}</span>
                                             @elseif($record['schedule_status'] === 'Special Holiday')
                                                 <span class="text-pink-600 font-semibold">{{ $record['working_hours'] }}</span>
+                                            @elseif($record['schedule_status'] === 'Day Off')
+                                                <span class="text-slate-600 font-medium">{{ $record['working_hours'] }}</span>
+                                            @elseif($record['schedule_status'] === 'Leave')
+                                                <span class="text-purple-600 font-medium">{{ $record['working_hours'] }}</span>
                                             @elseif($record['schedule_status'] === 'Holiday')
                                                 <span class="text-red-600 font-medium">{{ $record['working_hours'] }}</span>
                                             @else
@@ -306,31 +280,27 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             @if($record['worked_hours'] === '—')
                                                 <span class="text-gray-400">{{ $record['worked_hours'] }}</span>
-                                            @elseif($record['worked_hours'] === '0 hrs')
-                                                <span class="text-red-500 font-medium">{{ $record['worked_hours'] }}</span>
                                             @else
-                                                <span class="font-medium text-blue-600">{{ $record['worked_hours'] }}</span>
+                                                {{ $record['worked_hours'] }}
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             @if($record['scheduled_hours'] === '—')
                                                 <span class="text-gray-400">{{ $record['scheduled_hours'] }}</span>
-                                            @elseif($record['scheduled_hours'] === '0 hrs')
-                                                <span class="text-orange-500 font-medium">{{ $record['scheduled_hours'] }}</span>
                                             @else
-                                                <span class="font-medium text-purple-600">{{ $record['scheduled_hours'] }}</span>
+                                                {{ $record['scheduled_hours'] }}
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             @if($record['morning_overtime'] > 0)
-                                                <span class="text-green-600 font-medium">{{ formatHoursToReadable($record['morning_overtime']) }}</span>
+                                                {{ formatHoursToReadable($record['morning_overtime']) }}
                                             @else
                                                 <span class="text-gray-400">0 hrs</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             @if($record['evening_overtime'] > 0)
-                                                <span class="text-orange-600 font-medium">{{ formatHoursToReadable($record['evening_overtime']) }}</span>
+                                                {{ formatHoursToReadable($record['evening_overtime']) }}
                                             @else
                                                 <span class="text-gray-400">0 hrs</span>
                                             @endif
@@ -357,6 +327,7 @@
                                                 @elseif($record['attendance_status'] === 'Absent') bg-red-100 text-red-800
                                                 @elseif($record['attendance_status'] === 'Error') bg-yellow-100 text-yellow-800
                                                 @elseif($record['attendance_status'] === 'Day Off') bg-gray-100 text-gray-800
+                                                @elseif($record['attendance_status'] === 'No Schedule') bg-gray-100 text-gray-500
                                                 @else bg-gray-100 text-gray-800
                                                 @endif">
                                                 @if($record['attendance_status'] === 'Present')
@@ -381,10 +352,12 @@
                                                     @elseif($record['schedule_status'] === 'Special Holiday')
                                                         🟡 <span class="text-pink-600 font-semibold">{{ $record['combined_status'] }}</span>
                                                     @else
-                                                        🟡 {{ $record['combined_status'] }}
+                                                        🟡{{ $record['combined_status'] }}
                                                     @endif
                                                 @elseif($record['attendance_status'] === 'Day Off')
                                                     ⚪ {{ $record['combined_status'] }}
+                                                @elseif($record['attendance_status'] === 'No Schedule')
+                                                    <span class="text-gray-500">{{ $record['combined_status'] }}</span>
                                                 @else
                                                     ⚪ {{ $record['combined_status'] }}
                                                 @endif

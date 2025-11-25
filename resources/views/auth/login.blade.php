@@ -11,24 +11,24 @@
         <div class="absolute top-40 left-40 w-80 h-80 bg-gray-300 rounded-full mix-blend-multiply filter blur-xl opacity-15 animate-float" style="animation-delay: 4s;"></div>
     </div>
 
-    <div class="relative z-10 w-full max-w-md">
+    <div class="relative z-10 w-full max-w-sm">
         <!-- Logo Section -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-                <i class="fas fa-calculator text-3xl text-blue-600"></i>
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-lg mb-3">
+                <i class="fas fa-calculator text-2xl text-blue-600"></i>
             </div>
-            <h1 class="text-3xl font-bold text-white mb-2">Payroll System</h1>
-            <p class="text-blue-100">Welcome back! Please sign in to your account</p>
+            <h1 class="text-2xl font-bold text-white mb-1.5">Payroll System</h1>
+            <p class="text-blue-100 text-sm">Welcome back! Please sign in to your account</p>
         </div>
 
         <!-- Login Form -->
-        <div class="bg-white/95 backdrop-blur-xl border border-blue-200/20 rounded-2xl p-8 shadow-2xl">
-            <form method="POST" action="{{ route('login.post') }}" class="space-y-6">
+        <div class="bg-white/95 backdrop-blur-xl border border-blue-200/20 rounded-2xl p-6 shadow-2xl">
+            <form method="POST" action="{{ route('login.post') }}" class="space-y-5">
                 @csrf
                 
                 <!-- Email Field -->
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">
                         <i class="fas fa-envelope mr-2 text-blue-600"></i>Email Address
                     </label>
                     <div class="relative">
@@ -37,11 +37,11 @@
                             id="email" 
                             name="email" 
                             value="{{ old('email') }}"
-                            class="w-full px-4 py-3 pl-12 bg-white border border-blue-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 {{ $errors->has('email') ? 'border-red-500' : '' }}"
+                            class="w-full px-3 py-2.5 pl-10 bg-white border border-blue-300 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 {{ $errors->has('email') ? 'border-red-500' : '' }}"
                             placeholder="Enter your email"
                             required
                         >
-                        <i class="fas fa-envelope absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"></i>
+                        <i class="fas fa-envelope absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-600 text-sm"></i>
                     </div>
                     @error('email')
                         <p class="mt-2 text-sm text-red-500 flex items-center">
@@ -52,7 +52,7 @@
 
                 <!-- Password Field -->
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">
                         <i class="fas fa-lock mr-2 text-blue-600"></i>Password
                     </label>
                     <div class="relative">
@@ -60,17 +60,17 @@
                             type="password" 
                             id="password" 
                             name="password" 
-                            class="w-full px-4 py-3 pl-12 pr-12 bg-white border border-blue-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 {{ $errors->has('password') ? 'border-red-500' : '' }}"
+                            class="w-full px-3 py-2.5 pl-10 pr-10 bg-white border border-blue-300 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 {{ $errors->has('password') ? 'border-red-500' : '' }}"
                             placeholder="Enter your password"
                             required
                         >
-                        <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-600"></i>
+                        <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-600 text-sm"></i>
                         <button 
                             type="button" 
                             onclick="togglePassword('password')"
-                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 transition-colors"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 transition-colors"
                         >
-                            <i class="fas fa-eye" id="toggleIcon-password"></i>
+                            <i class="fas fa-eye text-sm" id="toggleIcon-password"></i>
                         </button>
                     </div>
                     @error('password')
@@ -98,7 +98,7 @@
                 <!-- Login Button -->
                 <button 
                     type="submit" 
-                    class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    class="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                     <i class="fas fa-sign-in-alt mr-2"></i>Sign In
                 </button>
@@ -117,23 +117,23 @@
                 <div class="grid grid-cols-2 gap-3">
                     <button 
                         type="button" 
-                        class="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-300"
+                        class="flex items-center justify-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-all duration-300"
                     >
-                        <i class="fab fa-google mr-2 text-red-500"></i>Google
+                        <i class="fab fa-google mr-2 text-red-500 text-sm"></i>Google
                     </button>
                     <button 
                         type="button" 
-                        class="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-300"
+                        class="flex items-center justify-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-all duration-300"
                     >
-                        <i class="fab fa-microsoft mr-2 text-blue-600"></i>Microsoft
+                        <i class="fab fa-microsoft mr-2 text-blue-600 text-sm"></i>Microsoft
                     </button>
                 </div>
             </form>
         </div>
 
         <!-- Footer -->
-        <div class="text-center mt-8">
-            <p class="text-blue-100 text-sm">
+        <div class="text-center mt-6">
+            <p class="text-blue-100 text-xs">
                 © 2025 Payroll System. All rights reserved.
             </p>
         </div>

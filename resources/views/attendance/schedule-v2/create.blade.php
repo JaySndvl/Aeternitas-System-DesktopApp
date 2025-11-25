@@ -237,10 +237,16 @@ document.getElementById('status').addEventListener('change', function() {
     const timeInField = document.getElementById('time_in');
     const timeOutField = document.getElementById('time_out');
     
-    if (this.value === 'Working' || this.value === 'Overtime' || this.value === 'Regular Holiday' || this.value === 'Special Holiday') {
+    if (this.value === 'Working' || this.value === 'Overtime' || this.value === 'Regular Holiday' || this.value === 'Special Holiday' || this.value === 'Day Off' || this.value === 'Leave') {
         timeFields.style.display = 'grid';
-        timeInField.required = true;
-        timeOutField.required = true;
+        // Only require time fields for Working and Overtime
+        if (this.value === 'Working' || this.value === 'Overtime') {
+            timeInField.required = true;
+            timeOutField.required = true;
+        } else {
+            timeInField.required = false;
+            timeOutField.required = false;
+        }
     } else {
         timeFields.style.display = 'none';
         timeInField.required = false;
@@ -260,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize time fields visibility
     const statusSelect = document.getElementById('status');
-    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime' || statusSelect.value === 'Regular Holiday' || statusSelect.value === 'Special Holiday') {
+    if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime' || statusSelect.value === 'Regular Holiday' || statusSelect.value === 'Special Holiday' || statusSelect.value === 'Day Off' || statusSelect.value === 'Leave') {
         document.getElementById('timeFields').style.display = 'grid';
     }
 });

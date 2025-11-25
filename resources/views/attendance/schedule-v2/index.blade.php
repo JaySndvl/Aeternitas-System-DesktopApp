@@ -1037,7 +1037,7 @@ function showDateReviewModal() {
     const timeFields = document.querySelector('.grid.grid-cols-2.gap-4');
     if (statusSelect && timeFields) {
         const status = statusSelect.value;
-        if (status === 'Working' || status === 'Overtime' || status === 'Regular Holiday' || status === 'Special Holiday') {
+        if (status === 'Working' || status === 'Overtime' || status === 'Regular Holiday' || status === 'Special Holiday' || status === 'Day Off' || status === 'Leave') {
             timeFields.style.display = 'grid';
         } else {
             timeFields.style.display = 'none';
@@ -1278,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const status = e.target.value;
             const timeFields = document.querySelector('.grid.grid-cols-2.gap-4');
             
-            if (status === 'Working' || status === 'Overtime' || status === 'Regular Holiday' || status === 'Special Holiday') {
+            if (status === 'Working' || status === 'Overtime' || status === 'Regular Holiday' || status === 'Special Holiday' || status === 'Day Off' || status === 'Leave') {
                 timeFields.style.display = 'grid';
             } else {
                 timeFields.style.display = 'none';
@@ -1295,12 +1295,6 @@ function saveDateSchedule() {
     const timeIn = document.getElementById('timeIn').value;
     const timeOut = document.getElementById('timeOut').value;
     const notes = document.getElementById('notes').value;
-    
-    // Validate holiday statuses require time in/out
-    if ((status === 'Regular Holiday' || status === 'Special Holiday') && (!timeIn || !timeOut)) {
-        alert('Time in and time out are required for holiday statuses.');
-        return;
-    }
     
     // Prepare employee-specific data
     const employeeSchedules = [];
