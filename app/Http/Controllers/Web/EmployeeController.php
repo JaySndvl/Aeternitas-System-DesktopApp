@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Department;
+use App\Models\Position;
 use App\Models\Account;
 use App\Helpers\CompanyHelper;
 use App\Mail\EmployeeWelcomeMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -32,7 +35,7 @@ class EmployeeController extends Controller
         $employees = $query->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         return view('employees.index', compact('employees', 'user'));
     }
@@ -50,8 +53,15 @@ class EmployeeController extends Controller
         }
         $departments = $departments->get();
         
-        $user = auth()->user();
-        return view('employees.create', compact('departments', 'user'));
+        // Load positions
+        $positions = Position::query();
+        if ($currentCompany) {
+            $positions->forCompany($currentCompany->id);
+        }
+        $positions = $positions->active()->with('department')->orderBy('name')->get();
+        
+        $user = Auth::user();
+        return view('employees.create', compact('departments', 'positions', 'user'));
     }
 
     /**
@@ -109,7 +119,7 @@ class EmployeeController extends Controller
             ));
         } catch (\Exception $e) {
             // Log error but don't fail the employee creation
-            \Log::error('Failed to send welcome email: ' . $e->getMessage());
+            Log::error('Failed to send welcome email: ' . $e->getMessage());
         }
 
         return redirect()->route('employees.index')
@@ -121,9 +131,43 @@ class EmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
+        $user = Auth::user();
+        $requestedEmployeeId = $employee->id;
+        
+        // If logged-in user is an employee, they can ONLY view their own profile and records
+        if ($user->role === 'employee') {
+            $loggedInEmployee = $user->employee;
+            if (!$loggedInEmployee && $user->employee_id) {
+                $loggedInEmployee = Employee::find($user->employee_id);
+            }
+            
+            // If no employee record found, redirect with error
+            if (!$loggedInEmployee) {
+                return redirect()->route('dashboard')
+                    ->with('error', 'Your account is not linked to an employee record. Please contact administrator.');
+            }
+            
+            // If they tried to access another employee's profile, redirect to their own
+            if ($requestedEmployeeId !== $loggedInEmployee->id) {
+                return redirect()->route('employees.show', $loggedInEmployee)
+                    ->with('error', 'You can only view your own employee profile.');
+            }
+            
+            // Always use the logged-in employee's record to ensure they ONLY see their own attendance records
+            $employee = $loggedInEmployee;
+        }
+        
+        // Load employee relationships
         $employee->load(['department', 'account', 'payrolls']);
-        $user = auth()->user();
-        return view('employees.show', compact('employee', 'user'));
+        
+        // Get attendance records - for employees, this will ONLY be their own records
+        // For admin/hr/manager, this will be the selected employee's records
+        $attendanceRecords = $employee->attendanceRecords()
+            ->orderBy('date', 'desc')
+            ->orderBy('time_in', 'desc')
+            ->paginate(10);
+        
+        return view('employees.show', compact('employee', 'user', 'attendanceRecords'));
     }
 
     /**
@@ -140,7 +184,7 @@ class EmployeeController extends Controller
         $departments = $departments->get();
         
         $employee->load('account');
-        $user = auth()->user();
+        $user = Auth::user();
         return view('employees.edit', compact('employee', 'departments', 'user'));
     }
 
@@ -210,7 +254,7 @@ class EmployeeController extends Controller
             $query->orderBy('created_at', 'desc');
         }]);
         
-        $user = auth()->user();
+        $user = Auth::user();
         return view('employees.payroll', compact('employee', 'user'));
     }
 }

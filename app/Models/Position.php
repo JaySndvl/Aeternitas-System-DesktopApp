@@ -83,7 +83,7 @@ class Position extends Model
     public function getSalaryRangeAttribute()
     {
         if ($this->min_salary && $this->max_salary) {
-            return '$' . number_format($this->min_salary, 0) . ' - $' . number_format($this->max_salary, 0);
+            return '₱' . number_format($this->min_salary, 0) . ' - ₱' . number_format($this->max_salary, 0);
         }
         return 'Salary not specified';
     }

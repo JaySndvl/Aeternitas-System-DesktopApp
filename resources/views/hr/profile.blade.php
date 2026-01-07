@@ -42,15 +42,15 @@
                 <div class="mt-6 space-y-4">
                     <div class="flex items-center justify-between py-2 border-b border-gray-100">
                         <span class="text-sm text-gray-600">Employee ID</span>
-                        <span class="text-sm font-medium text-gray-900">{{ $employee->employee_id ?? 'N/A' }}</span>
+                        <span class="text-sm font-medium text-gray-900">{{ $employee?->employee_id ?? 'N/A' }}</span>
                     </div>
                     <div class="flex items-center justify-between py-2 border-b border-gray-100">
                         <span class="text-sm text-gray-600">Department</span>
-                        <span class="text-sm font-medium text-gray-900">{{ $employee->department->name ?? 'N/A' }}</span>
+                        <span class="text-sm font-medium text-gray-900">{{ $employee && $employee->department ? $employee->department->name : 'N/A' }}</span>
                     </div>
                     <div class="flex items-center justify-between py-2 border-b border-gray-100">
                         <span class="text-sm text-gray-600">Hire Date</span>
-                        <span class="text-sm font-medium text-gray-900">{{ $employee->hire_date ? $employee->hire_date->format('M d, Y') : 'N/A' }}</span>
+                        <span class="text-sm font-medium text-gray-900">{{ $employee && $employee->hire_date ? $employee->hire_date->format('M d, Y') : 'N/A' }}</span>
                     </div>
                     <div class="flex items-center justify-between py-2">
                         <span class="text-sm text-gray-600">Status</span>
@@ -67,7 +67,7 @@
                     <div class="space-y-2">
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="fas fa-phone w-4 h-4 mr-3 text-gray-400"></i>
-                            {{ $employee->phone ?? 'N/A' }}
+                            {{ $employee?->phone ?? 'N/A' }}
                         </div>
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="fas fa-envelope w-4 h-4 mr-3 text-gray-400"></i>
@@ -96,7 +96,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                                <input type="text" name="first_name" value="{{ $employee->first_name ?? '' }}" 
+                                <input type="text" name="first_name" value="{{ $employee?->first_name ?? '' }}" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('first_name')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -104,7 +104,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                                <input type="text" name="last_name" value="{{ $employee->last_name ?? '' }}" 
+                                <input type="text" name="last_name" value="{{ $employee?->last_name ?? '' }}" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('last_name')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -120,7 +120,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                                <input type="tel" name="phone" value="{{ $employee->phone ?? '' }}" 
+                                <input type="tel" name="phone" value="{{ $employee?->phone ?? '' }}" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('phone')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -171,12 +171,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
-                                <input type="text" value="{{ $employee->employee_id ?? 'N/A' }}" readonly 
+                                <input type="text" value="{{ $employee?->employee_id ?? 'N/A' }}" readonly 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Position</label>
-                                <input type="text" name="position" value="{{ $employee->position ?? '' }}" 
+                                <input type="text" name="position" value="{{ $employee?->position ?? '' }}" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('position')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -211,7 +211,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Hire Date</label>
-                                <input type="date" name="hire_date" value="{{ $employee->hire_date ? $employee->hire_date->format('Y-m-d') : '' }}" 
+                                <input type="date" name="hire_date" value="{{ $employee && $employee->hire_date ? $employee->hire_date->format('Y-m-d') : '' }}" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('hire_date')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -219,7 +219,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Salary</label>
-                                <input type="number" name="salary" value="{{ $employee->salary ?? '' }}" step="0.01" 
+                                <input type="number" name="salary" value="{{ $employee?->salary ?? '' }}" step="0.01" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('salary')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

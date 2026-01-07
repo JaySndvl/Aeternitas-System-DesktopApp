@@ -49,6 +49,91 @@
         overlay.classList.toggle('hidden');
     }
 
+    // Sidebar Time In/Out functions
+    async function sidebarTimeIn() {
+        const btn = event.target.closest('button');
+        if (!btn) return;
+        
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-3 text-lg text-gray-400"></i><span>Processing...</span>';
+
+        try {
+            const response = await fetch('{{ route("attendance.time-in") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showSidebarMessage(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showSidebarMessage(data.error || 'Failed to clock in', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        } catch (error) {
+            console.error('Error clocking in:', error);
+            showSidebarMessage('Failed to clock in', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+    async function sidebarTimeOut() {
+        const btn = event.target.closest('button');
+        if (!btn) return;
+        
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-3 text-lg text-gray-400"></i><span>Processing...</span>';
+
+        try {
+            const response = await fetch('{{ route("attendance.time-out") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showSidebarMessage(data.message, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showSidebarMessage(data.error || 'Failed to clock out', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        } catch (error) {
+            console.error('Error clocking out:', error);
+            showSidebarMessage('Failed to clock out', 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+    function showSidebarMessage(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-lg shadow-lg z-50`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
     // Close sidebar on escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {

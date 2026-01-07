@@ -94,7 +94,8 @@
                                         @enderror
                                     </div>
 
-                                    <!-- Employee Selection (only show when no employee pre-selected) -->
+                                    <!-- Employee Selection (only show when no employee pre-selected and user is not an employee) -->
+                                    @if($user->role !== 'employee')
                                     <div>
                                         <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">
                                             <i class="fas fa-users mr-1"></i>Employee
@@ -111,6 +112,10 @@
                                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                         @enderror
                                     </div>
+                                    @else
+                                    <!-- For employees, use their own ID -->
+                                    <input type="hidden" name="employee_id" value="{{ $user->employee->id ?? '' }}">
+                                    @endif
                                 </div>
                             @endif
                         </div>

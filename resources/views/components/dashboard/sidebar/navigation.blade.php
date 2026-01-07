@@ -2,6 +2,13 @@
 
 @php
     $currentCompany = \App\Helpers\CompanyHelper::getCurrentCompany();
+    
+    // Check if employee is currently timed in (for employee role users)
+    $isCurrentlyTimedIn = false;
+    if ($user->role === 'employee' && $user->employee) {
+        $todayAttendance = $user->employee->getTodayAttendance();
+        $isCurrentlyTimedIn = $todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out;
+    }
 @endphp
 
 <nav class="mt-8 px-4 pb-4">
@@ -88,55 +95,97 @@
                  x-transition:leave-end="opacity-0 transform scale-95"
                  class="ml-8 mt-2 space-y-1 bg-gray-50 rounded-lg p-2 border border-gray-200">
                 
-                <!-- Time In/Out -->
-                <a href="{{ route('attendance.time-in-out') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.time-in-out' ? 'bg-white text-blue-600' : '' }}">
-                    <i class="fas fa-sign-in-alt mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'attendance.time-in-out' ? 'text-blue-600' : '' }}"></i>
+                <!-- Time In/Out - Only show for employees -->
+                @if($user->role === 'employee')
+                @php
+                    $timeInOutDisabled = !$isCurrentlyTimedIn;
+                @endphp
+                <a href="{{ $timeInOutDisabled ? '#' : route('attendance.time-in-out') }}" 
+                   class="flex items-center px-3 py-2 text-sm {{ $timeInOutDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:text-blue-600' }} rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.time-in-out' ? 'bg-white text-blue-600' : '' }}"
+                   {{ $timeInOutDisabled ? 'onclick="return false;"' : '' }}>
+                    <i class="fas fa-sign-in-alt mr-3 text-sm {{ $timeInOutDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-600' }} {{ $activeRoute === 'attendance.time-in-out' ? 'text-blue-600' : '' }}"></i>
                     <span>Time In/Out</span>
                     <span class="ml-auto bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">Live</span>
                 </a>
+                @endif
                 
-                <!-- Daily Attendance -->
-                <a href="{{ route('attendance.daily') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.daily' ? 'bg-white text-blue-600' : '' }}">
-                    <i class="fas fa-calendar-day mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'attendance.daily' ? 'text-blue-600' : '' }}"></i>
-                    <span>Daily Attendance</span>
+                <!-- Attendance Record -->
+                @php
+                    $dailyDisabled = $user->role === 'employee' && !$isCurrentlyTimedIn;
+                @endphp
+                <a href="{{ $dailyDisabled ? '#' : route('attendance.daily') }}" 
+                   class="flex items-center px-3 py-2 text-sm {{ $dailyDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:text-blue-600' }} rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.daily' ? 'bg-white text-blue-600' : '' }}"
+                   {{ $dailyDisabled ? 'onclick="return false;"' : '' }}>
+                    <i class="fas fa-calendar-day mr-3 text-sm {{ $dailyDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-600' }} {{ $activeRoute === 'attendance.daily' ? 'text-blue-600' : '' }}"></i>
+                    <span>Attendance Record</span>
                 </a>
                 
                 <!-- Timekeeping -->
-                <a href="{{ route('attendance.timekeeping') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.timekeeping' ? 'bg-white text-blue-600' : '' }}">
-                    <i class="fas fa-stopwatch mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'attendance.timekeeping' ? 'text-blue-600' : '' }}"></i>
+                @php
+                    $timekeepingDisabled = $user->role === 'employee' && !$isCurrentlyTimedIn;
+                @endphp
+                <a href="{{ $timekeepingDisabled ? '#' : route('attendance.timekeeping') }}" 
+                   class="flex items-center px-3 py-2 text-sm {{ $timekeepingDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:text-blue-600' }} rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.timekeeping' ? 'bg-white text-blue-600' : '' }}"
+                   {{ $timekeepingDisabled ? 'onclick="return false;"' : '' }}>
+                    <i class="fas fa-stopwatch mr-3 text-sm {{ $timekeepingDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-600' }} {{ $activeRoute === 'attendance.timekeeping' ? 'text-blue-600' : '' }}"></i>
                     <span>Timekeeping</span>
                 </a>
                 
                 <!-- Import DTR -->
-                <a href="{{ route('attendance.import-dtr') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.import-dtr' ? 'bg-white text-blue-600' : '' }}">
-                    <i class="fas fa-file-import mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'attendance.import-dtr' ? 'text-blue-600' : '' }}"></i>
+                @php
+                    $importDtrDisabled = $user->role === 'employee' && !$isCurrentlyTimedIn;
+                @endphp
+                <a href="{{ $importDtrDisabled ? '#' : route('attendance.import-dtr') }}" 
+                   class="flex items-center px-3 py-2 text-sm {{ $importDtrDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:text-blue-600' }} rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.import-dtr' ? 'bg-white text-blue-600' : '' }}"
+                   {{ $importDtrDisabled ? 'onclick="return false;"' : '' }}>
+                    <i class="fas fa-file-import mr-3 text-sm {{ $importDtrDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-600' }} {{ $activeRoute === 'attendance.import-dtr' ? 'text-blue-600' : '' }}"></i>
                     <span>Import DTR</span>
                     <span class="ml-auto bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded-full">New</span>
                 </a>
                 
                 <!-- Schedule Management -->
-                <a href="{{ route('schedule-v2.index') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'schedule-v2.index' ? 'bg-white text-blue-600' : '' }}">
-                    <i class="fas fa-calendar-plus mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'schedule-v2.index' ? 'text-blue-600' : '' }}"></i>
+                @if($user->role !== 'employee')
+                @php
+                    $scheduleDisabled = $user->role === 'employee' && !$isCurrentlyTimedIn;
+                @endphp
+                <a href="{{ $scheduleDisabled ? '#' : route('schedule-v2.index') }}" 
+                   class="flex items-center px-3 py-2 text-sm {{ $scheduleDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:text-blue-600' }} rounded-md transition-all duration-200 group {{ $activeRoute === 'schedule-v2.index' ? 'bg-white text-blue-600' : '' }}"
+                   {{ $scheduleDisabled ? 'onclick="return false;"' : '' }}>
+                    <i class="fas fa-calendar-plus mr-3 text-sm {{ $scheduleDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-600' }} {{ $activeRoute === 'schedule-v2.index' ? 'text-blue-600' : '' }}"></i>
                     <span>Schedule Management</span>
                 </a>
+                @endif
                 
                 <!-- Overtime -->
-                <a href="{{ route('attendance.overtime') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.overtime' ? 'bg-white text-blue-600' : '' }}">
-                    <i class="fas fa-clock mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'attendance.overtime' ? 'text-blue-600' : '' }}"></i>
+                @php
+                    $overtimeDisabled = $user->role === 'employee' && !$isCurrentlyTimedIn;
+                @endphp
+                <a href="{{ $overtimeDisabled ? '#' : route('attendance.overtime') }}" 
+                   class="flex items-center px-3 py-2 text-sm {{ $overtimeDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:text-blue-600' }} rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.overtime' ? 'bg-white text-blue-600' : '' }}"
+                   {{ $overtimeDisabled ? 'onclick="return false;"' : '' }}>
+                    <i class="fas fa-clock mr-3 text-sm {{ $overtimeDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-600' }} {{ $activeRoute === 'attendance.overtime' ? 'text-blue-600' : '' }}"></i>
                     <span>Overtime</span>
                 </a>
                 
                 <!-- Leave Management -->
-                <a href="{{ route('attendance.leave-management') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.leave-management' ? 'bg-white text-blue-600' : '' }}">
-                    <i class="fas fa-calendar-times mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'attendance.leave-management' ? 'text-blue-600' : '' }}"></i>
+                @php
+                    $leaveDisabled = $user->role === 'employee' && !$isCurrentlyTimedIn;
+                @endphp
+                <a href="{{ $leaveDisabled ? '#' : route('attendance.leave-management') }}" 
+                   class="flex items-center px-3 py-2 text-sm {{ $leaveDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-white hover:text-blue-600' }} rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.leave-management' ? 'bg-white text-blue-600' : '' }}"
+                   {{ $leaveDisabled ? 'onclick="return false;"' : '' }}>
+                    <i class="fas fa-calendar-times mr-3 text-sm {{ $leaveDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-blue-600' }} {{ $activeRoute === 'attendance.leave-management' ? 'text-blue-600' : '' }}"></i>
                     <span>Leave Management</span>
                 </a>
                 
                 <!-- Period Management -->
-                <a href="{{ route('attendance.period-management.index') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.period-management.index' ? 'bg-white text-blue-600' : '' }}">
+                <a href="{{ route('attendance.period-management.index') }}" 
+                   class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.period-management.index' ? 'bg-white text-blue-600' : '' }}">
                     <i class="fas fa-calendar-week mr-3 text-sm text-gray-400 group-hover:text-blue-600 {{ $activeRoute === 'attendance.period-management.index' ? 'text-blue-600' : '' }}"></i>
                     <span>Period Management</span>
+                    @if($user->role !== 'employee')
                     <span class="ml-auto bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full">New</span>
+                    @endif
                 </a>
                 
                 @if($user->role === 'admin' || $user->role === 'hr')
@@ -188,7 +237,7 @@
         </div>
         
         @if($user->role === 'admin' || $user->role === 'hr')
-        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+        <a href="{{ route('employees.create') }}" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-user-plus mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Add Employee</span>
         </a>
@@ -200,12 +249,43 @@
         @endif
         
         @if($user->role === 'employee')
+        <!-- Time In Button -->
+        @if(!isset($todayAttendance) || !$todayAttendance || !$todayAttendance->time_in || $todayAttendance->time_out)
+        <button onclick="sidebarTimeIn()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-lg transition-all duration-200 group">
+            <i class="fas fa-sign-in-alt mr-3 text-lg text-gray-400 group-hover:text-green-600"></i>
+            <span>Time In</span>
+        </button>
+        @else
+        <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
+            <i class="fas fa-check mr-3 text-lg text-gray-400"></i>
+            <span>Already Clocked In</span>
+        </div>
+        @endif
+
+        <!-- Time Out Button -->
+        @if($todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out)
+        <button onclick="sidebarTimeOut()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-red-600 rounded-lg transition-all duration-200 group">
+            <i class="fas fa-sign-out-alt mr-3 text-lg text-gray-400 group-hover:text-red-600"></i>
+            <span>Time Out</span>
+        </button>
+        @elseif($todayAttendance && $todayAttendance->time_out)
+        <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
+            <i class="fas fa-check mr-3 text-lg text-gray-400"></i>
+            <span>Already Clocked Out</span>
+        </div>
+        @else
+        <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
+            <i class="fas fa-sign-out-alt mr-3 text-lg text-gray-400"></i>
+            <span>Time Out (Clock In First)</span>
+        </div>
+        @endif
+        
         <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-download mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Download Payslip</span>
         </a>
         
-        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+        <a href="{{ route('hr.profile') }}" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-edit mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Update Profile</span>
         </a>
@@ -217,7 +297,7 @@
             <span>Documents</span>
         </a>
         
-        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+        <a href="{{ route('attendance.leave-management.create') }}" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-calendar-check mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Leave Requests</span>
         </a>

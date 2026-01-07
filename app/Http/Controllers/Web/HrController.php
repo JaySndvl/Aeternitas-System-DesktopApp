@@ -174,15 +174,34 @@ class HrController extends Controller
 
         // Update employee if exists
         if ($employee) {
-            $employee->update([
+            $updateData = [
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
-                'phone' => $request->phone,
-                'department_id' => $request->department_id,
-                'position' => $request->position,
-                'salary' => $request->salary,
-                'hire_date' => $request->hire_date,
-            ]);
+            ];
+            
+            // Only update optional fields if they're provided and not empty
+            // This prevents null values when form fields are empty (since DB requires these fields)
+            if ($request->filled('phone')) {
+                $updateData['phone'] = $request->phone;
+            }
+            
+            if ($request->filled('department_id')) {
+                $updateData['department_id'] = $request->department_id;
+            }
+            
+            if ($request->filled('position')) {
+                $updateData['position'] = $request->position;
+            }
+            
+            if ($request->filled('salary')) {
+                $updateData['salary'] = $request->salary;
+            }
+            
+            if ($request->filled('hire_date')) {
+                $updateData['hire_date'] = $request->hire_date;
+            }
+            
+            $employee->update($updateData);
         }
 
         return redirect()->route('hr.profile')

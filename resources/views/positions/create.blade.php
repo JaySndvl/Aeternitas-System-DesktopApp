@@ -32,7 +32,7 @@
                                 Position Name <span class="text-red-500">*</span>
                             </label>
                             <input type="text" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('name') border-red-500 @enderror" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('name') border-red-500 @enderror" 
                                    id="name" name="name" value="{{ old('name') }}" required
                                    placeholder="e.g., Software Engineer">
                             @error('name')
@@ -45,7 +45,7 @@
                                 Position Code <span class="text-red-500">*</span>
                             </label>
                             <input type="text" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('code') border-red-500 @enderror" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('code') border-red-500 @enderror" 
                                    id="code" name="code" value="{{ old('code') }}" required maxlength="10"
                                    placeholder="e.g., SE">
                             @error('code')
@@ -55,7 +55,7 @@
                         
                         <div class="sm:col-span-2">
                             <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                            <textarea class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('description') border-red-500 @enderror" 
+                            <textarea class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('description') border-red-500 @enderror" 
                                       id="description" name="description" rows="3" placeholder="Describe the position's role and responsibilities...">{{ old('description') }}</textarea>
                             @error('description')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -72,7 +72,7 @@
                             <label for="level" class="block text-sm font-medium text-gray-700 mb-2">
                                 Level <span class="text-red-500">*</span>
                             </label>
-                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('level') border-red-500 @enderror" 
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('level') border-red-500 @enderror" 
                                     id="level" name="level" required>
                                 <option value="">Select Level</option>
                                 <option value="Entry" {{ old('level') == 'Entry' ? 'selected' : '' }}>Entry</option>
@@ -89,7 +89,7 @@
                             <label for="department_id" class="block text-sm font-medium text-gray-700 mb-2">
                                 Department <span class="text-red-500">*</span>
                             </label>
-                            <select name="department_id" id="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('department_id') border-red-500 @enderror" required>
+                            <select name="department_id" id="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('department_id') border-red-500 @enderror" required>
                                 <option value="">Select Department</option>
                                 @if(isset($departments) && is_iterable($departments))
                                     @foreach($departments as $department)
@@ -126,10 +126,10 @@
                             <label for="min_salary" class="block text-sm font-medium text-gray-700 mb-2">Minimum Salary</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 sm:text-sm">$</span>
+                                    <span class="text-gray-500 sm:text-sm">₱</span>
                                 </div>
                                 <input type="number" 
-                                       class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('min_salary') border-red-500 @enderror" 
+                                       class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('min_salary') border-red-500 @enderror" 
                                        id="min_salary" name="min_salary" value="{{ old('min_salary') }}" 
                                        step="0.01" min="0" placeholder="0.00">
                             </div>
@@ -142,10 +142,10 @@
                             <label for="max_salary" class="block text-sm font-medium text-gray-700 mb-2">Maximum Salary</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 sm:text-sm">$</span>
+                                    <span class="text-gray-500 sm:text-sm">₱</span>
                                 </div>
                                 <input type="number" 
-                                       class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('max_salary') border-red-500 @enderror" 
+                                       class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('max_salary') border-red-500 @enderror" 
                                        id="max_salary" name="max_salary" value="{{ old('max_salary') }}" 
                                        step="0.01" min="0" placeholder="0.00">
                             </div>
@@ -164,7 +164,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Requirements</label>
                             <div id="requirements-container">
                                 <div class="flex mb-2">
-                                    <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                    <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                                            name="requirements[]" placeholder="Enter requirement">
                                     <button type="button" class="ml-2 px-3 py-2 text-red-600 hover:text-red-800 remove-requirement">
                                         <i class="fas fa-trash"></i>
@@ -180,7 +180,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Responsibilities</label>
                             <div id="responsibilities-container">
                                 <div class="flex mb-2">
-                                    <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                    <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                                            name="responsibilities[]" placeholder="Enter responsibility">
                                     <button type="button" class="ml-2 px-3 py-2 text-red-600 hover:text-red-800 remove-responsibility">
                                         <i class="fas fa-trash"></i>
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const div = document.createElement('div');
         div.className = 'flex mb-2';
         div.innerHTML = `
-            <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                    name="requirements[]" placeholder="Enter requirement">
             <button type="button" class="ml-2 px-3 py-2 text-red-600 hover:text-red-800 remove-requirement">
                 <i class="fas fa-trash"></i>
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const div = document.createElement('div');
         div.className = 'flex mb-2';
         div.innerHTML = `
-            <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+            <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
                    name="responsibilities[]" placeholder="Enter responsibility">
             <button type="button" class="ml-2 px-3 py-2 text-red-600 hover:text-red-800 remove-responsibility">
                 <i class="fas fa-trash"></i>
@@ -254,6 +254,63 @@ document.addEventListener('DOMContentLoaded', function() {
             e.target.closest('.flex').remove();
         }
     });
-});
+    });
 </script>
+
+<style>
+    /* Ensure all form inputs and selects are visible with dark text */
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+        color: #111827 !important; /* text-gray-900 */
+        background-color: #ffffff !important; /* bg-white */
+    }
+    
+    /* Force select dropdowns to show dark text */
+    #level,
+    #department_id {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Ensure select options are visible */
+    select option {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+    }
+    
+    select option:checked {
+        color: #111827 !important;
+        background-color: #f3f4f6 !important;
+    }
+    
+    select option:hover {
+        background-color: #e5e7eb !important;
+        color: #111827 !important;
+    }
+    
+    /* Input focus states */
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Placeholder text */
+    input::placeholder,
+    textarea::placeholder {
+        color: #9ca3af !important; /* text-gray-400 */
+        opacity: 1;
+    }
+    
+    /* Requirements and responsibilities inputs */
+    #requirements-container input[type="text"],
+    #responsibilities-container input[type="text"] {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+    }
+</style>
 @endsection

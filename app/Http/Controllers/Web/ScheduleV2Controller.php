@@ -49,6 +49,12 @@ class ScheduleV2Controller extends Controller
         $selectedMonth = $request->get('month', now()->month);
         $searchQuery = $request->get('search');
 
+        $user = Auth::user();
+        
+        // Determine if this is HR dashboard (HR/Admin can see all employees)
+        // Note: Auth::user() returns Account model, which has a 'role' field
+        $isHRDashboard = $user && in_array(strtolower($user->role ?? ''), ['admin', 'hr', 'manager']);
+
         // Get departments for filter
         $departmentsQuery = Department::query();
         if ($currentCompany) {
@@ -60,6 +66,11 @@ class ScheduleV2Controller extends Controller
         $employeesQuery = Employee::with('department');
         if ($currentCompany) {
             $employeesQuery->forCompany($currentCompany->id);
+        }
+        
+        // If not HR, only allow viewing own record
+        if (!$isHRDashboard) {
+            $employeesQuery->where('id', $user->id);
         }
         
         $employees = $employeesQuery
@@ -76,12 +87,15 @@ class ScheduleV2Controller extends Controller
             ->orderBy('first_name')
             ->get();
 
-        // If no department selected, get all employees for the bulk modal
-        $allEmployeesQuery = Employee::with('department');
-        if ($currentCompany) {
-            $allEmployeesQuery->forCompany($currentCompany->id);
+        // Get all employees for bulk modal (only if HR)
+        $allEmployees = collect();
+        if ($isHRDashboard) {
+            $allEmployeesQuery = Employee::with('department');
+            if ($currentCompany) {
+                $allEmployeesQuery->forCompany($currentCompany->id);
+            }
+            $allEmployees = $allEmployeesQuery->orderBy('first_name')->get();
         }
-        $allEmployees = $allEmployeesQuery->orderBy('first_name')->get();
 
         // Get schedules for the selected month
         $schedules = collect();
@@ -108,8 +122,6 @@ class ScheduleV2Controller extends Controller
         // Generate calendar days for the month
         $calendarDays = $this->generateCalendarDays($selectedYear, $selectedMonth);
 
-        $user = Auth::user();
-
         return view('attendance.schedule-v2.index', compact(
             'departments',
             'employees',
@@ -120,7 +132,8 @@ class ScheduleV2Controller extends Controller
             'selectedYear',
             'selectedMonth',
             'searchQuery',
-            'user'
+            'user',
+            'isHRDashboard'
         ));
     }
 
@@ -143,10 +156,23 @@ class ScheduleV2Controller extends Controller
             $employee = $employeeQuery->find($employeeId);
         }
 
+        // Check if user is an employee
+        $user = Auth::user();
+        $userRole = strtolower(trim($user->role ?? ''));
+        $isEmployee = ($userRole === 'employee');
+        
         $employeesQuery = Employee::with('department');
+        
+        // For employees, only show their own record
+        if ($isEmployee && $user->employee) {
+            $employeesQuery->where('id', $user->employee->id);
+        } else {
+            // For admin/hr/manager, show all employees (filtered by company)
         if ($currentCompany) {
             $employeesQuery->forCompany($currentCompany->id);
+            }
         }
+        
         $employees = $employeesQuery->orderBy('first_name')->get();
         
         $departmentsQuery = \App\Models\Department::query();
@@ -167,6 +193,18 @@ class ScheduleV2Controller extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        
+        // Check if user is an employee
+        $userRole = strtolower(trim($user->role ?? ''));
+        $isEmployee = ($userRole === 'employee');
+        
+        // For employees, ensure they can only create schedules for themselves
+        if ($isEmployee && $user->employee) {
+            // Override employee_id to ensure employees can only create their own schedules
+            $request->merge(['employee_id' => $user->employee->id]);
+        }
+        
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
@@ -175,6 +213,13 @@ class ScheduleV2Controller extends Controller
             'status' => 'required|in:Working,Day Off,Leave,Absent,Regular Holiday,Special Holiday,Overtime',
             'notes' => 'nullable|string|max:500'
         ]);
+
+        // Additional security check: For employees, verify they're creating for themselves
+        if ($isEmployee && $user->employee && $request->employee_id !== $user->employee->id) {
+            return redirect()->back()
+                ->with('error', 'You can only create schedules for yourself.')
+                ->withInput();
+        }
 
         // Additional validation: if time_out is provided, it should be after time_in
         if ($request->time_in && $request->time_out) {

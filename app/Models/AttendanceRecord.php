@@ -74,6 +74,11 @@ class AttendanceRecord extends Model
         return $this->hasMany(AttendanceLog::class);
     }
 
+    public function breaks(): HasMany
+    {
+        return $this->hasMany(EmployeeBreak::class);
+    }
+
     /**
      * Calculate total hours worked
      */
@@ -83,15 +88,83 @@ class AttendanceRecord extends Model
             return 0;
         }
 
-        $totalMinutes = $this->time_out->diffInMinutes($this->time_in);
+        // Ensure both times are Carbon instances
+        $timeIn = $this->time_in instanceof \Carbon\Carbon ? $this->time_in : \Carbon\Carbon::parse($this->time_in);
+        $timeOut = $this->time_out instanceof \Carbon\Carbon ? $this->time_out : \Carbon\Carbon::parse($this->time_out);
         
-        // Subtract break time if exists
-        if ($this->break_start && $this->break_end) {
-            $breakMinutes = $this->break_end->diffInMinutes($this->break_start);
-            $totalMinutes -= $breakMinutes;
+        // Ensure both times are in the same timezone
+        $timeIn->setTimezone(config('app.timezone', 'Asia/Manila'));
+        $timeOut->setTimezone(config('app.timezone', 'Asia/Manila'));
+        
+        // Calculate total minutes
+        $totalMinutes = $timeOut->diffInMinutes($timeIn);
+        
+        // If diffInMinutes returns 0 or negative, try alternative calculation
+        if ($totalMinutes <= 0) {
+            // Use timestamp difference as fallback
+            $totalSeconds = $timeOut->timestamp - $timeIn->timestamp;
+            $totalMinutes = max(0, round($totalSeconds / 60));
         }
+        
+        // Subtract total break time from all breaks
+        $totalBreakMinutes = $this->getTotalBreakMinutes();
+        $totalMinutes = max(0, $totalMinutes - $totalBreakMinutes);
 
         return round($totalMinutes / 60, 2);
+    }
+
+    /**
+     * Get total break minutes from all breaks
+     */
+    public function getTotalBreakMinutes(): int
+    {
+        // Use breaks relationship if available
+        if ($this->relationLoaded('breaks')) {
+            return $this->breaks->sum(function ($break) {
+                if ($break->break_end) {
+                    return $break->break_duration_minutes ?? $break->break_start->diffInMinutes($break->break_end);
+                }
+                // If break is still active, calculate up to now
+                return $break->break_start->diffInMinutes(now());
+            });
+        }
+
+        // Fallback to old break_start/break_end fields for backward compatibility
+        if ($this->break_start && $this->break_end) {
+            return $this->break_end->diffInMinutes($this->break_start);
+        }
+
+        // Check if there's an active break
+        if ($this->break_start && !$this->break_end) {
+            return $this->break_start->diffInMinutes(now());
+        }
+
+        return 0;
+    }
+
+    /**
+     * Get total break hours
+     */
+    public function getTotalBreakHours(): float
+    {
+        return round($this->getTotalBreakMinutes() / 60, 2);
+    }
+
+    /**
+     * Check if total break exceeds 1.5 hours (90 minutes)
+     */
+    public function isOverBreak(): bool
+    {
+        return $this->getTotalBreakMinutes() > 90; // 1.5 hours = 90 minutes
+    }
+
+    /**
+     * Get over break minutes (how many minutes over 1.5 hours)
+     */
+    public function getOverBreakMinutes(): int
+    {
+        $totalMinutes = $this->getTotalBreakMinutes();
+        return max(0, $totalMinutes - 90);
     }
 
     /**

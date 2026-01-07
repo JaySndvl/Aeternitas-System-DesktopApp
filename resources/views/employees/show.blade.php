@@ -12,10 +12,12 @@
                 <p class="mt-1 text-sm text-gray-500">Employee Details</p>
             </div>
             <div class="flex space-x-3">
-                <a href="{{ route('employees.edit', $employee) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                    <i class="fas fa-edit mr-2"></i>
-                    Edit Employee
-                </a>
+                @if(in_array($user->role, ['admin', 'hr', 'manager']))
+                    <a href="{{ route('employees.edit', $employee) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <i class="fas fa-edit mr-2"></i>
+                        Edit Employee
+                    </a>
+                @endif
                 <a href="{{ route('employees.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Back to Employees
@@ -106,6 +108,101 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Attendance Records -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Attendance Records</h3>
+                        <a href="{{ route('attendance.timekeeping', ['employee_id' => $employee->id]) }}" class="text-sm text-blue-600 hover:text-blue-500">
+                            View All →
+                        </a>
+                    </div>
+                    @if($attendanceRecords->count() > 0)
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time In</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Out</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Hours</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach($attendanceRecords as $record)
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                {{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                @if($record->time_in)
+                                                    {{ \Carbon\Carbon::parse($record->time_in)->format('g:i A') }}
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                @if($record->time_out)
+                                                    {{ \Carbon\Carbon::parse($record->time_out)->format('g:i A') }}
+                                                @elseif($record->time_in)
+                                                    @php
+                                                        $recordDate = \Carbon\Carbon::parse($record->date);
+                                                        $isToday = $recordDate->isToday();
+                                                    @endphp
+                                                    @if($isToday)
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                            <div class="w-1.5 h-1.5 rounded-full mr-1.5 bg-blue-400 animate-pulse"></div>
+                                                            Working
+                                                        </span>
+                                                    @else
+                                                        <span class="text-gray-400">Not Clocked Out</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                                @if($record->time_out && $record->total_hours)
+                                                    {{ \App\Helpers\TimezoneHelper::formatHours($record->total_hours) }}
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                @php
+                                                    $statusColors = [
+                                                        'present' => 'bg-green-100 text-green-800',
+                                                        'absent' => 'bg-red-100 text-red-800',
+                                                        'absent_excused' => 'bg-yellow-100 text-yellow-800',
+                                                        'absent_unexcused' => 'bg-red-100 text-red-800',
+                                                        'absent_sick' => 'bg-orange-100 text-orange-800',
+                                                        'absent_personal' => 'bg-purple-100 text-purple-800',
+                                                        'late' => 'bg-yellow-100 text-yellow-800',
+                                                        'half_day' => 'bg-blue-100 text-blue-800',
+                                                        'on_leave' => 'bg-indigo-100 text-indigo-800',
+                                                    ];
+                                                    $statusColor = $statusColors[$record->status] ?? 'bg-gray-100 text-gray-800';
+                                                @endphp
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $record->status)) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-4">
+                            {{ $attendanceRecords->links() }}
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-clock text-gray-400 text-4xl mb-3"></i>
+                            <p class="text-sm text-gray-500">No attendance records found.</p>
+                        </div>
+                    @endif
+                </div>
             </div>
 
             <!-- Sidebar -->
@@ -126,18 +223,26 @@
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
                     <div class="space-y-3">
-                        <a href="{{ route('employees.edit', $employee) }}" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-edit mr-2"></i>
-                            Edit Employee
-                        </a>
+                        @if(in_array($user->role, ['admin', 'hr', 'manager']))
+                            <a href="{{ route('employees.edit', $employee) }}" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-edit mr-2"></i>
+                                Edit Employee
+                            </a>
+                        @endif
                         <a href="{{ route('employees.payroll', $employee) }}" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                             <i class="fas fa-money-bill-wave mr-2"></i>
                             View Payroll
                         </a>
-                        <button type="button" onclick="openDeleteModal('{{ $employee->id }}', '{{ $employee->full_name }}')" class="w-full flex items-center justify-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors">
-                            <i class="fas fa-trash mr-2"></i>
-                            Delete Employee
-                        </button>
+                        <a href="{{ route('attendance.timekeeping', ['employee_id' => $employee->id]) }}" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-clock mr-2"></i>
+                            View Attendance
+                        </a>
+                        @if(in_array($user->role, ['admin', 'hr', 'manager']))
+                            <button type="button" onclick="openDeleteModal('{{ $employee->id }}', '{{ $employee->full_name }}')" class="w-full flex items-center justify-center px-4 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors">
+                                <i class="fas fa-trash mr-2"></i>
+                                Delete Employee
+                            </button>
+                        @endif
                     </div>
                 </div>
 

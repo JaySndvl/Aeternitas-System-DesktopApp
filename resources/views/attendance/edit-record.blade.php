@@ -26,6 +26,7 @@
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <!-- Employee Selection -->
+                @if($user->role !== 'employee')
                 <div class="sm:col-span-2">
                     <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">
                         Employee <span class="text-red-500">*</span>
@@ -42,13 +43,17 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+                @else
+                <!-- For employees, hide the dropdown and use their own ID -->
+                <input type="hidden" name="employee_id" value="{{ $attendanceRecord->employee_id }}">
+                @endif
 
                 <!-- Date -->
                 <div>
                     <label for="date" class="block text-sm font-medium text-gray-700 mb-2">
                         Date <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" name="date" id="date" value="{{ old('date', $attendanceRecord->date->format('Y-m-d')) }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors @error('date') border-red-500 @enderror">
+                    <input type="date" name="date" id="date" value="{{ old('date', $attendanceRecord->date->format('Y-m-d')) }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-gray-900 @error('date') border-red-500 @enderror" style="background-color: white !important; color: #111827 !important;">
                     @error('date')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror

@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'track.session' => \App\Http\Middleware\TrackUserSession::class,
+            'require.timein' => \App\Http\Middleware\RequireTimeInMiddleware::class,
         ]);
         
         // Add session tracking and company context to web middleware group

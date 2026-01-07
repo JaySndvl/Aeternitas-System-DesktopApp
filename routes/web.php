@@ -32,7 +32,7 @@ Route::middleware('guest')->group(function () {
 });
 
 // Protected routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'require.timein'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [RoleBasedDashboardController::class, 'index'])->name('dashboard');
    Route::get('/payroll/manage', [PayrollController::class, 'index'])->name('payroll.manage');
@@ -169,7 +169,11 @@ Route::middleware('auth')->group(function () {
         
         // General attendance routes
         Route::get('/daily', [App\Http\Controllers\Web\AttendanceController::class, 'daily'])->name('daily');
+        Route::get('/daily/export/{format}', [App\Http\Controllers\Web\AttendanceController::class, 'exportDaily'])->name('daily.export');
         Route::get('/timekeeping', [App\Http\Controllers\Web\AttendanceController::class, 'timekeeping'])->name('timekeeping');
+        Route::get('/timekeeping/export/{format}', [App\Http\Controllers\Web\AttendanceController::class, 'exportTimekeeping'])->name('timekeeping.export');
+        Route::get('/reports', [App\Http\Controllers\Web\AttendanceController::class, 'reports'])->name('reports');
+        Route::get('/reports/export/{format}', [App\Http\Controllers\Web\AttendanceController::class, 'exportReports'])->name('reports.export');
         Route::get('/statistics', [App\Http\Controllers\Web\AttendanceController::class, 'getStatistics'])->name('statistics');
         
         // Import DTR routes
@@ -210,6 +214,7 @@ Route::middleware('auth')->group(function () {
         
         // Overtime routes
         Route::get('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'index'])->name('overtime');
+        Route::get('/overtime/export/{format}', [App\Http\Controllers\Web\OvertimeController::class, 'exportOvertime'])->name('overtime.export');
         Route::post('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'store'])->name('overtime.store');
         Route::put('/overtime/{id}/status', [App\Http\Controllers\Web\OvertimeController::class, 'updateStatus'])->name('overtime.update-status');
         Route::delete('/overtime/{id}/cancel', [App\Http\Controllers\Web\OvertimeController::class, 'cancel'])->name('overtime.cancel');
@@ -217,17 +222,19 @@ Route::middleware('auth')->group(function () {
         
         // Leave management routes
         Route::get('/leave-management', [App\Http\Controllers\Web\LeaveController::class, 'index'])->name('leave-management');
+        Route::get('/leave-management/export/{format}', [App\Http\Controllers\Web\LeaveController::class, 'exportLeave'])->name('leave-management.export');
+        Route::get('/leave-management/create', [App\Http\Controllers\Web\LeaveController::class, 'create'])->name('leave-management.create');
         Route::post('/leave-management', [App\Http\Controllers\Web\LeaveController::class, 'store'])->name('leave-management.store');
         Route::put('/leave-management/{id}/status', [App\Http\Controllers\Web\LeaveController::class, 'updateStatus'])->name('leave-management.update-status');
         Route::delete('/leave-management/{id}/cancel', [App\Http\Controllers\Web\LeaveController::class, 'cancel'])->name('leave-management.cancel');
         Route::get('/leave-management/balance', [App\Http\Controllers\Web\LeaveController::class, 'getLeaveBalance'])->name('leave-management.balance');
+        Route::post('/leave-management/balance', [App\Http\Controllers\Web\LeaveController::class, 'storeBalance'])->name('leave-management.balance.store');
+        Route::put('/leave-management/balance/{id}', [App\Http\Controllers\Web\LeaveController::class, 'updateBalance'])->name('leave-management.balance.update');
         Route::get('/leave-management/statistics', [App\Http\Controllers\Web\LeaveController::class, 'getStatistics'])->name('leave-management.statistics');
         
         // Admin/HR only routes
         Route::middleware(['role:admin,hr'])->group(function () {
-            Route::get('/reports', function () {
-                return view('attendance.reports', ['user' => auth()->user()]);
-            })->name('reports');
+            Route::get('/reports', [App\Http\Controllers\Web\AttendanceController::class, 'reports'])->name('reports');
             
             Route::get('/settings', function () {
                 return view('attendance.settings', ['user' => auth()->user()]);

@@ -181,7 +181,7 @@
                                         <form action="{{ route('payroll.update-status', $payroll) }}" method="POST" class="inline">
                                             @csrf
                                             @method('POST')
-                                            <select name="status" onchange="this.form.submit()" class="text-xs border-gray-300 rounded">
+                                            <select name="status" onchange="this.form.submit()" class="text-xs text-gray-900 bg-white border-gray-300 rounded">
                                                 <option value="pending" {{ $payroll->status === 'pending' ? 'selected' : '' }}>Pending</option>
                                                 <option value="processed" {{ $payroll->status === 'processed' ? 'selected' : '' }}>Processed</option>
                                                 <option value="paid" {{ $payroll->status === 'paid' ? 'selected' : '' }}>Paid</option>

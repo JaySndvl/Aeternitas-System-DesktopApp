@@ -34,13 +34,37 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Timekeeping</h1>
-            <p class="mt-1 text-sm text-gray-600">Track and manage employee time records</p>
+            <p class="mt-1 text-sm text-gray-600">
+                @if($user->role === 'employee')
+                    View your time records
+                @else
+                    Track and manage employee time records
+                @endif
+            </p>
         </div>
+        @if(in_array($user->role, ['admin', 'hr', 'manager']))
         <div class="mt-4 sm:mt-0 flex space-x-3">
-            <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-download mr-2"></i>
-                Export
-            </button>
+            <!-- Export Dropdown -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-download mr-2"></i>
+                    Export Report
+                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div class="py-1">
+                        <a href="{{ route('attendance.timekeeping.export', ['format' => 'pdf']) . '?' . http_build_query(request()->query()) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-file-pdf mr-2 text-red-500"></i>Export as PDF
+                        </a>
+                        <a href="{{ route('attendance.timekeeping.export', ['format' => 'csv']) . '?' . http_build_query(request()->query()) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-file-csv mr-2 text-green-500"></i>Export as CSV
+                        </a>
+                        <a href="{{ route('attendance.timekeeping.export', ['format' => 'xls']) . '?' . http_build_query(request()->query()) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-file-excel mr-2 text-green-600"></i>Export as Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
             <a href="{{ route('attendance.import-dtr') }}" class="inline-flex items-center px-4 py-2 border border-orange-300 rounded-lg font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors">
                 <i class="fas fa-file-import mr-2"></i>
                 Import DTR
@@ -50,17 +74,19 @@
                 Add Record
             </a>
         </div>
+        @endif
     </div>
 
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <form method="GET" action="{{ route('attendance.timekeeping') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            @if(in_array($user->role, ['admin', 'hr', 'manager']))
             <div>
                 <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">Employee</label>
-                <select name="employee_id" id="employee_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                    <option value="">All Employees</option>
+                <select name="employee_id" id="employee_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-gray-900" style="background-color: white !important; color: #111827 !important;">
+                    <option value="" style="color: #111827 !important;">All Employees</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
+                        <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }} style="color: #111827 !important;">
                             {{ $employee->full_name }}
                         </option>
                     @endforeach
@@ -68,22 +94,33 @@
             </div>
             <div>
                 <label for="department_id" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                <select name="department_id" id="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                    <option value="">All Departments</option>
+                <select name="department_id" id="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-gray-900" style="background-color: white !important; color: #111827 !important;">
+                    <option value="" style="color: #111827 !important;">All Departments</option>
                     @foreach($departments as $department)
-                        <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
+                        <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }} style="color: #111827 !important;">
                             {{ $department->name }}
                         </option>
                     @endforeach
                 </select>
             </div>
+            @endif
             <div>
-                <label for="date_from" class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
-                <input type="date" name="date_from" id="date_from" value="{{ request('date_from') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                <label for="date_from" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-calendar-alt mr-1 text-gray-500"></i>From Date
+                </label>
+                <div class="relative">
+                    <input type="text" name="date_from" id="date_from" value="{{ request('date_from') }}" placeholder="Select date" class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-gray-900 cursor-pointer" style="background-color: white !important; color: #111827 !important;">
+                    <i class="fas fa-calendar absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" style="pointer-events: auto;"></i>
+                </div>
             </div>
             <div>
-                <label for="date_to" class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
-                <input type="date" name="date_to" id="date_to" value="{{ request('date_to') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                <label for="date_to" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-calendar-alt mr-1 text-gray-500"></i>To Date
+                </label>
+                <div class="relative">
+                    <input type="text" name="date_to" id="date_to" value="{{ request('date_to') }}" placeholder="Select date" class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-gray-900 cursor-pointer" style="background-color: white !important; color: #111827 !important;">
+                    <i class="fas fa-calendar absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" style="pointer-events: auto;"></i>
+                </div>
             </div>
         </div>
         <div class="mt-4 flex justify-end space-x-3">
@@ -160,7 +197,13 @@
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-medium text-gray-900">Timekeeping Records</h3>
-            <p class="mt-1 text-sm text-gray-600">Employee time records for the selected period</p>
+            <p class="mt-1 text-sm text-gray-600">
+                @if($user->role === 'employee')
+                    Your time records for the selected period
+                @else
+                    Employee time records for the selected period
+                @endif
+            </p>
         </div>
 
         <!-- Desktop Table -->
@@ -191,9 +234,6 @@
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
                         </th>
                     </tr>
                 </thead>
@@ -232,6 +272,19 @@
                                 <div class="text-sm text-gray-900">
                                     @if($record->time_out)
                                         {{ \Carbon\Carbon::parse($record->time_out)->format('g:i A') }}
+                                    @elseif($record->time_in)
+                                        @php
+                                            $recordDate = \Carbon\Carbon::parse($record->date);
+                                            $isToday = $recordDate->isToday();
+                                        @endphp
+                                        @if($isToday)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 bg-blue-400 animate-pulse"></div>
+                                                Working
+                                            </span>
+                                        @else
+                                            <span class="text-gray-400">Not Clocked Out</span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -239,19 +292,34 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    @php
-                                        $breakDuration = 0;
-                                        
-                                        if ($record->break_start && $record->break_end) {
-                                            $breakStart = \Carbon\Carbon::parse($record->break_start);
-                                            $breakEnd = \Carbon\Carbon::parse($record->break_end);
-                                            $breakMinutes = $breakStart->diffInMinutes($breakEnd);
-                                            $breakDuration = $breakMinutes / 60;
+                                    @if($record->time_out)
+                                        @php
+                                            // Calculate total break duration from all breaks
+                                            $totalBreakMinutes = 0;
                                             
-                                        }
-                                    @endphp
-                                    @if($breakDuration > 0)
-                                        {{ \App\Helpers\TimezoneHelper::formatHours($breakDuration) }}
+                                            // Use breaks relationship if available (for multiple breaks)
+                                            if ($record->relationLoaded('breaks') && $record->breaks->count() > 0) {
+                                                foreach ($record->breaks as $break) {
+                                                    if ($break->break_end) {
+                                                        // Use stored duration if available, otherwise calculate
+                                                        $totalBreakMinutes += $break->break_duration_minutes ?? $break->break_start->diffInMinutes($break->break_end);
+                                                    }
+                                                }
+                                            } 
+                                            // Fallback to old break_start/break_end fields for backward compatibility
+                                            elseif ($record->break_start && $record->break_end) {
+                                                $breakStart = \Carbon\Carbon::parse($record->break_start);
+                                                $breakEnd = \Carbon\Carbon::parse($record->break_end);
+                                                $totalBreakMinutes = $breakStart->diffInMinutes($breakEnd);
+                                            }
+                                            
+                                            $breakDuration = $totalBreakMinutes / 60;
+                                        @endphp
+                                        @if($breakDuration > 0)
+                                            {{ \App\Helpers\TimezoneHelper::formatHours($breakDuration) }}
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -259,8 +327,22 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    @if($record->total_hours)
-                                        {{ \App\Helpers\TimezoneHelper::formatHours($record->total_hours) }}
+                                    @if($record->time_out && $record->time_in)
+                                        @php
+                                            // Load breaks relationship if not already loaded
+                                            if (!$record->relationLoaded('breaks')) {
+                                                $record->load('breaks');
+                                            }
+                                            // Always calculate total hours to ensure accuracy
+                                            $calculatedHours = $record->calculateTotalHours();
+                                            // Always use calculated hours for display (more accurate)
+                                            $displayHours = $calculatedHours > 0 ? $calculatedHours : 0;
+                                        @endphp
+                                        @if($displayHours > 0)
+                                            {{ \App\Helpers\TimezoneHelper::formatHours($displayHours) }}
+                                        @else
+                                            <span class="text-gray-400">0h</span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -268,7 +350,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    @if($record->overtime_hours > 0)
+                                    @if($record->time_out && $record->overtime_hours > 0)
                                         {{ \App\Helpers\TimezoneHelper::formatHours($record->overtime_hours) }}
                                     @else
                                         <span class="text-gray-400">-</span>
@@ -277,34 +359,52 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @php
-                                    $statusColors = [
-                                        'present' => 'bg-green-100 text-green-800',
-                                        'absent' => 'bg-red-100 text-red-800',
-                                        'late' => 'bg-yellow-100 text-yellow-800',
-                                        'half_day' => 'bg-blue-100 text-blue-800'
-                                    ];
-                                    $statusColor = $statusColors[$record->status] ?? 'bg-gray-100 text-gray-800';
+                                    $recordDate = \Carbon\Carbon::parse($record->date);
+                                    $isToday = $recordDate->isToday();
+                                    
+                                    // If employee is still working TODAY (time in but no time out), show "Working" status
+                                    // For past dates with time in but no time out, show "Incomplete" status
+                                    if ($record->time_in && !$record->time_out) {
+                                        if ($isToday) {
+                                            $statusColor = 'bg-blue-100 text-blue-800';
+                                            $statusText = 'Working';
+                                        } else {
+                                            $statusColor = 'bg-yellow-100 text-yellow-800';
+                                            $statusText = 'Incomplete';
+                                        }
+                                    } else {
+                                        $statusColors = [
+                                            'present' => 'bg-green-100 text-green-800',
+                                            'absent' => 'bg-red-100 text-red-800',
+                                            'late' => 'bg-yellow-100 text-yellow-800',
+                                            'half_day' => 'bg-blue-100 text-blue-800'
+                                        ];
+                                        $statusColor = $statusColors[$record->status] ?? 'bg-gray-100 text-gray-800';
+                                        $statusText = ucfirst(str_replace('_', ' ', $record->status));
+                                    }
                                 @endphp
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
-                                    <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
-                                    {{ ucfirst(str_replace('_', ' ', $record->status)) }}
+                                    <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ str_replace('text-', 'bg-', $statusColor) }} @if($record->time_in && !$record->time_out && $isToday) animate-pulse @endif"></div>
+                                    {{ $statusText }}
                                 </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex space-x-2">
-                                    <a href="{{ route('attendance.edit-record', $record->id) }}" class="text-blue-600 hover:text-blue-900 transition-colors" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button onclick="openDeleteModal('{{ $record->id }}', '{{ $record->employee->full_name }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')" class="text-red-600 hover:text-red-900 transition-colors" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                                No attendance records found
+                            <td colspan="8" class="px-6 py-4 text-center">
+                                <div class="flex flex-col items-center justify-center py-8">
+                                    <i class="fas fa-clock text-gray-400 text-4xl mb-4"></i>
+                                    <p class="text-gray-500 text-lg font-medium mb-2">No attendance records found</p>
+                                    @if($user->role === 'employee')
+                                        <p class="text-gray-400 text-sm">You haven't clocked in yet. Use the Time In/Out page to record your attendance.</p>
+                                        <a href="{{ route('attendance.time-in-out') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-clock mr-2"></i>
+                                            Go to Time In/Out
+                                        </a>
+                                    @else
+                                        <p class="text-gray-400 text-sm">Try adjusting your filters or date range.</p>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @endforelse
@@ -381,33 +481,39 @@
                                 </div>
                             </div>
                             @php
-                                $statusColors = [
-                                    'present' => 'bg-green-100 text-green-800',
-                                    'absent' => 'bg-red-100 text-red-800',
-                                    'late' => 'bg-yellow-100 text-yellow-800',
-                                    'half_day' => 'bg-blue-100 text-blue-800'
-                                ];
-                                $statusColor = $statusColors[$record->status] ?? 'bg-gray-100 text-gray-800';
+                                $recordDate = \Carbon\Carbon::parse($record->date);
+                                $isToday = $recordDate->isToday();
+                                
+                                // If employee is still working TODAY (time in but no time out), show "Working" status
+                                // For past dates with time in but no time out, show "Incomplete" status
+                                if ($record->time_in && !$record->time_out) {
+                                    if ($isToday) {
+                                        $statusColor = 'bg-blue-100 text-blue-800';
+                                        $statusText = 'Working';
+                                    } else {
+                                        $statusColor = 'bg-yellow-100 text-yellow-800';
+                                        $statusText = 'Incomplete';
+                                    }
+                                } else {
+                                    $statusColors = [
+                                        'present' => 'bg-green-100 text-green-800',
+                                        'absent' => 'bg-red-100 text-red-800',
+                                        'late' => 'bg-yellow-100 text-yellow-800',
+                                        'half_day' => 'bg-blue-100 text-blue-800'
+                                    ];
+                                    $statusColor = $statusColors[$record->status] ?? 'bg-gray-100 text-gray-800';
+                                    $statusText = ucfirst(str_replace('_', ' ', $record->status));
+                                }
                             @endphp
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
-                                <div class="w-1.5 h-1.5 rounded-full mr-1 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
-                                {{ ucfirst(str_replace('_', ' ', $record->status)) }}
+                                <div class="w-1.5 h-1.5 rounded-full mr-1 {{ str_replace('text-', 'bg-', $statusColor) }} @if($record->time_in && !$record->time_out && $isToday) animate-pulse @endif"></div>
+                                {{ $statusText }}
                             </span>
                         </div>
                         <div class="grid grid-cols-2 gap-4 text-sm mb-3">
                             <div>
                                 <div class="text-gray-500">Date</div>
                                 <div class="font-medium">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</div>
-                            </div>
-                            <div>
-                                <div class="text-gray-500">Total Hours</div>
-                                <div class="font-medium">
-                                    @if($record->total_hours)
-                                        {{ \App\Helpers\TimezoneHelper::formatHours($record->total_hours) }}
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
-                                </div>
                             </div>
                             <div>
                                 <div class="text-gray-500">Time In</div>
@@ -424,6 +530,44 @@
                                 <div class="font-medium">
                                     @if($record->time_out)
                                         {{ \Carbon\Carbon::parse($record->time_out)->format('g:i A') }}
+                                    @elseif($record->time_in)
+                                        @php
+                                            $recordDate = \Carbon\Carbon::parse($record->date);
+                                            $isToday = $recordDate->isToday();
+                                        @endphp
+                                        @if($isToday)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                <div class="w-1.5 h-1.5 rounded-full mr-1 bg-blue-400 animate-pulse"></div>
+                                                Working
+                                            </span>
+                                        @else
+                                            <span class="text-gray-400">Not Clocked Out</span>
+                                        @endif
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </div>
+                            </div>
+                            @if($record->time_out)
+                            <div>
+                                <div class="text-gray-500">Total Hours</div>
+                                <div class="font-medium">
+                                    @if($record->time_in && $record->time_out)
+                                        @php
+                                            // Load breaks relationship if not already loaded
+                                            if (!$record->relationLoaded('breaks')) {
+                                                $record->load('breaks');
+                                            }
+                                            // Always calculate total hours to ensure accuracy
+                                            $calculatedHours = $record->calculateTotalHours();
+                                            // Always use calculated hours for display (more accurate)
+                                            $displayHours = $calculatedHours > 0 ? $calculatedHours : 0;
+                                        @endphp
+                                        @if($displayHours > 0)
+                                            {{ \App\Helpers\TimezoneHelper::formatHours($displayHours) }}
+                                        @else
+                                            <span class="text-gray-400">0h</span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -433,13 +577,26 @@
                                 <div class="text-gray-500">Break Time</div>
                                 <div class="font-medium">
                                     @php
-                                        $breakDuration = 0;
-                                        if ($record->break_start && $record->break_end) {
+                                        // Calculate total break duration from all breaks
+                                        $totalBreakMinutes = 0;
+                                        
+                                        // Use breaks relationship if available (for multiple breaks)
+                                        if ($record->relationLoaded('breaks') && $record->breaks->count() > 0) {
+                                            foreach ($record->breaks as $break) {
+                                                if ($break->break_end) {
+                                                    // Use stored duration if available, otherwise calculate
+                                                    $totalBreakMinutes += $break->break_duration_minutes ?? $break->break_start->diffInMinutes($break->break_end);
+                                                }
+                                            }
+                                        } 
+                                        // Fallback to old break_start/break_end fields for backward compatibility
+                                        elseif ($record->break_start && $record->break_end) {
                                             $breakStart = \Carbon\Carbon::parse($record->break_start);
                                             $breakEnd = \Carbon\Carbon::parse($record->break_end);
-                                            $breakMinutes = $breakStart->diffInMinutes($breakEnd);
-                                            $breakDuration = $breakMinutes / 60;
+                                            $totalBreakMinutes = $breakStart->diffInMinutes($breakEnd);
                                         }
+                                        
+                                        $breakDuration = $totalBreakMinutes / 60;
                                     @endphp
                                     @if($breakDuration > 0)
                                         {{ \App\Helpers\TimezoneHelper::formatHours($breakDuration) }}
@@ -448,19 +605,24 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
-                        <div class="flex justify-end space-x-2">
-                            <a href="{{ route('attendance.edit-record', $record->id) }}" class="text-blue-600 hover:text-blue-900 transition-colors">
-                                <i class="fas fa-edit mr-1"></i>Edit
-                            </a>
-                            <button onclick="openDeleteModal('{{ $record->id }}', '{{ $record->employee->full_name }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')" class="text-red-600 hover:text-red-900 transition-colors">
-                                <i class="fas fa-trash mr-1"></i>Delete
-                            </button>
+                            @endif
                         </div>
                     </div>
                 @empty
-                    <div class="text-center text-gray-500 py-8">
-                        No attendance records found
+                    <div class="text-center py-8">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="fas fa-clock text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-500 text-lg font-medium mb-2">No attendance records found</p>
+                            @if($user->role === 'employee')
+                                <p class="text-gray-400 text-sm mb-4">You haven't clocked in yet. Use the Time In/Out page to record your attendance.</p>
+                                <a href="{{ route('attendance.time-in-out') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    Go to Time In/Out
+                                </a>
+                            @else
+                                <p class="text-gray-400 text-sm">Try adjusting your filters or date range.</p>
+                            @endif
+                        </div>
                     </div>
                 @endforelse
             </div>
@@ -477,129 +639,195 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden transition-opacity duration-300">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
-        <div class="mt-3">
-            <!-- Modal Header -->
-            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-            </div>
-            
-            <!-- Modal Body -->
-            <div class="text-center">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Delete Attendance Record</h3>
-                <p class="text-sm text-gray-500 mb-4">
-                    Are you sure you want to delete the attendance record for 
-                    <span id="deleteEmployeeName" class="font-medium text-gray-900"></span> 
-                    on <span id="deleteDate" class="font-medium text-gray-900"></span>?
-                </p>
-                <p class="text-xs text-red-600 mb-6">This action cannot be undone.</p>
-            </div>
-            
-            <!-- Modal Footer -->
-            <div class="flex justify-center space-x-3">
-                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
-                    Cancel
-                </button>
-                <button onclick="confirmDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    <i class="fas fa-trash mr-2"></i>Delete
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    /* Flatpickr Calendar Styling - Matching other pages */
+    .flatpickr-calendar {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        font-family: inherit;
+    }
+    
+    .flatpickr-months {
+        background: #ffffff;
+        border-radius: 0.5rem 0.5rem 0 0;
+        padding: 0.5rem;
+    }
+    
+    .flatpickr-month {
+        color: #111827;
+    }
+    
+    .flatpickr-current-month {
+        color: #111827;
+        font-weight: 600;
+    }
+    
+    .flatpickr-weekdays {
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .flatpickr-weekday {
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+    
+    .flatpickr-day {
+        color: #111827;
+        border-radius: 0.375rem;
+    }
+    
+    .flatpickr-day:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+    
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
+    
+    .flatpickr-day.selected:hover,
+    .flatpickr-day.startRange:hover,
+    .flatpickr-day.endRange:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+    }
+    
+    .flatpickr-day.flatpickr-disabled,
+    .flatpickr-day.prevMonthDay,
+    .flatpickr-day.nextMonthDay {
+        color: #d1d5db;
+    }
+    
+    .flatpickr-day.today {
+        border-color: #2563eb;
+        font-weight: 600;
+    }
+    
+    .flatpickr-prev-month,
+    .flatpickr-next-month {
+        color: #6b7280;
+    }
+    
+    .flatpickr-prev-month:hover,
+    .flatpickr-next-month:hover {
+        color: #2563eb;
+    }
+    
+    /* Date input styling */
+    input[type="date"] {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+    }
+    
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(0);
+    }
+    
+    input[type="date"]::-webkit-datetime-edit-text,
+    input[type="date"]::-webkit-datetime-edit-month-field,
+    input[type="date"]::-webkit-datetime-edit-day-field,
+    input[type="date"]::-webkit-datetime-edit-year-field {
+        color: #111827 !important;
+    }
+</style>
 
 <script>
-function applyFilters() {
-    const employee = document.getElementById('employee').value;
-    const department = document.getElementById('department').value;
-    const dateFrom = document.getElementById('dateFrom').value;
-    const dateTo = document.getElementById('dateTo').value;
-    
-    // This will be implemented when backend is ready
-    console.log('Applying filters:', { employee, department, dateFrom, dateTo });
-}
-
-// Global variables for delete modal
-let deleteRecordId = null;
-
-function openDeleteModal(recordId, employeeName, date) {
-    deleteRecordId = recordId;
-    document.getElementById('deleteEmployeeName').textContent = employeeName;
-    document.getElementById('deleteDate').textContent = date;
-    
-    const modal = document.getElementById('deleteModal');
-    const modalContent = document.getElementById('modalContent');
-    
-    modal.classList.remove('hidden');
-    
-    // Trigger animation after a brief delay to ensure the modal is visible
-    setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
-}
-
-function closeDeleteModal() {
-    const modal = document.getElementById('deleteModal');
-    const modalContent = document.getElementById('modalContent');
-    
-    // Start closing animation
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modalContent.classList.add('scale-95', 'opacity-0');
-    
-    // Hide modal after animation completes
-    setTimeout(() => {
-        modal.classList.add('hidden');
-        deleteRecordId = null;
-    }, 300);
-}
-
-function confirmDelete() {
-    if (deleteRecordId) {
-        // Create and submit delete form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/attendance/delete-record/${deleteRecordId}`;
-        
-        // Add CSRF token
-        const csrfToken = document.createElement('input');
-        csrfToken.type = 'hidden';
-        csrfToken.name = '_token';
-        csrfToken.value = '{{ csrf_token() }}';
-        form.appendChild(csrfToken);
-        
-        // Add method override for DELETE
-        const methodInput = document.createElement('input');
-        methodInput.type = 'hidden';
-        methodInput.name = '_method';
-        methodInput.value = 'DELETE';
-        form.appendChild(methodInput);
-        
-        document.body.appendChild(form);
-        form.submit();
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if Flatpickr is loaded
+    if (typeof flatpickr === 'undefined') {
+        console.error('Flatpickr is not loaded!');
+        return;
     }
-}
-
-// Close modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeDeleteModal();
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Initialize Flatpickr for "From Date" - matching other pages
+    const dateFromInput = document.getElementById('date_from');
+    if (!dateFromInput) {
+        console.error('date_from input not found');
+        return;
     }
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeDeleteModal();
+    
+    const dateFromPicker = flatpickr("#date_from", {
+        dateFormat: "Y-m-d",
+        defaultDate: "{{ request('date_from') ? request('date_from') : '' }}",
+        maxDate: today,
+        onChange: function(selectedDates, dateStr, instance) {
+            // Update min date of "To Date" when "From Date" changes
+            if (dateStr && dateToPicker) {
+                dateToPicker.set('minDate', dateStr);
+            }
+        },
+        onReady: function(selectedDates, dateStr, instance) {
+            // Ensure text is visible
+            instance.calendarContainer.style.color = '#111827';
+        }
+    });
+    console.log('Date From picker initialized:', dateFromPicker);
+    
+    // Initialize Flatpickr for "To Date" - matching other pages
+    const dateToInput = document.getElementById('date_to');
+    if (!dateToInput) {
+        console.error('date_to input not found');
+        return;
     }
+    
+    const dateToPicker = flatpickr("#date_to", {
+        dateFormat: "Y-m-d",
+        defaultDate: "{{ request('date_to') ? request('date_to') : '' }}",
+        maxDate: today,
+        minDate: "{{ request('date_from') ? request('date_from') : '' }}",
+        onReady: function(selectedDates, dateStr, instance) {
+            // Ensure text is visible
+            instance.calendarContainer.style.color = '#111827';
+        }
+    });
+    console.log('Date To picker initialized:', dateToPicker);
+    
+    // Make calendar icons clickable to open date picker
+    const calendarIcons = document.querySelectorAll('.fa-calendar');
+    calendarIcons.forEach(function(icon) {
+        icon.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const input = this.parentElement.querySelector('input[type="text"]');
+            if (input && input.id === 'date_from') {
+                console.log('Opening date_from picker');
+                dateFromPicker.open();
+            } else if (input && input.id === 'date_to') {
+                console.log('Opening date_to picker');
+                dateToPicker.open();
+            }
+        });
+        icon.style.cursor = 'pointer';
+        icon.style.pointerEvents = 'auto';
+    });
+    
+    // Also ensure input clicks work
+    dateFromInput.addEventListener('click', function() {
+        console.log('date_from input clicked');
+        dateFromPicker.open();
+    });
+    
+    dateToInput.addEventListener('click', function() {
+        console.log('date_to input clicked');
+        dateToPicker.open();
+    });
 });
 </script>
-
-<!-- Hidden delete form -->
-<form id="delete-form" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-</form>
 @endsection

@@ -317,6 +317,101 @@ public function debugPayslipGeneration(Payroll $payroll)
 }
 
     /**
+     * Recalculate payroll values from employee data for export
+     */
+    private function recalculatePayrollForExport(Payroll $payroll)
+    {
+        $employee = $payroll->employee;
+        if (!$employee) {
+            Log::warning("Payroll {$payroll->id} has no employee relationship");
+            return;
+        }
+        
+        // Get rates from payroll or employee - prioritize employee salary
+        $monthlyRate = $payroll->monthly_rate ?? $employee->salary ?? 0;
+        
+        // If still zero, try to get from employee directly
+        if ($monthlyRate == 0 && $employee->salary > 0) {
+            $monthlyRate = $employee->salary;
+        }
+        
+        // Log for debugging
+        Log::info("Recalculating payroll {$payroll->id}", [
+            'employee_id' => $employee->id,
+            'employee_salary' => $employee->salary,
+            'payroll_monthly_rate' => $payroll->monthly_rate,
+            'calculated_monthly_rate' => $monthlyRate,
+        ]);
+        
+        // If employee has no salary, we can't calculate
+        if ($monthlyRate == 0) {
+            Log::warning("Cannot recalculate payroll {$payroll->id}: Employee {$employee->id} has no salary");
+            return;
+        }
+        
+        $semiMonthlyRate = $payroll->semi_monthly_rate ?? ($monthlyRate / 2);
+        $dailyRate = $payroll->daily_rate ?? $employee->daily_rate ?? ($monthlyRate / 26);
+        $hourlyRate = $payroll->hourly_rate ?? $employee->hourly_rate ?? ($dailyRate / 8);
+        
+        // Calculate basic salary - use semi-monthly rate if available
+        $basicSalary = $payroll->basic_salary;
+        if ($basicSalary == 0) {
+            if ($semiMonthlyRate > 0) {
+                $basicSalary = $semiMonthlyRate;
+            } elseif ($monthlyRate > 0) {
+                $basicSalary = $monthlyRate / 2;
+            } elseif ($dailyRate > 0) {
+                // Calculate based on pay period days
+                $startDate = Carbon::parse($payroll->pay_period_start);
+                $endDate = Carbon::parse($payroll->pay_period_end);
+                $daysInPeriod = $startDate->diffInDays($endDate) + 1;
+                $basicSalary = $dailyRate * min($daysInPeriod, 15); // Semi-monthly typically 15 days
+            }
+        }
+        
+        // Calculate overtime pay
+        $overtimeRate = $payroll->overtime_rate ?? ($hourlyRate * 1.25);
+        $overtimePay = $payroll->overtime_pay;
+        if ($overtimePay == 0 && ($payroll->overtime_hours ?? 0) > 0) {
+            $overtimePay = ($payroll->overtime_hours ?? 0) * $overtimeRate;
+        }
+        
+        // Get other components
+        $nightDiffPay = $payroll->night_differential_pay ?? 0;
+        $restDayPremium = $payroll->rest_day_premium_pay ?? 0;
+        $allowances = $payroll->allowances ?? 0;
+        $bonuses = $payroll->bonuses ?? 0;
+        $deductions = $payroll->deductions ?? 0;
+        $taxAmount = $payroll->tax_amount ?? 0;
+        
+        // Calculate gross pay
+        $grossPay = $basicSalary + $overtimePay + $nightDiffPay + 
+                   $restDayPremium + $allowances + $bonuses;
+        
+        // Calculate net pay
+        $netPay = $grossPay - $deductions - $taxAmount;
+        
+        // Always update if we calculated values (even if they're still zero, update the rates)
+        $payroll->update([
+            'basic_salary' => $basicSalary,
+            'gross_pay' => $grossPay,
+            'net_pay' => $netPay,
+            'overtime_pay' => $overtimePay,
+            'monthly_rate' => $monthlyRate,
+            'semi_monthly_rate' => $semiMonthlyRate,
+            'daily_rate' => $dailyRate,
+            'hourly_rate' => $hourlyRate,
+            'overtime_rate' => $overtimeRate,
+        ]);
+        
+        Log::info("Updated payroll {$payroll->id}", [
+            'basic_salary' => $basicSalary,
+            'gross_pay' => $grossPay,
+            'net_pay' => $netPay,
+        ]);
+    }
+
+    /**
      * Export payroll data to CSV/Excel
      *
      * @param array|null $periodData
@@ -326,45 +421,126 @@ public function debugPayslipGeneration(Payroll $payroll)
      */
   public function exportPayrollToExcel(?array $periodData = null, ?array $employeeIds = null, string $format = 'csv'): string
 {
-    $query = Payroll::with(['employee', 'employee.department']);
-
-    if (!empty($periodData['start_date'])) {
-        $query->where('pay_period_start', $periodData['start_date']);
+    // Use window function to get latest payroll per employee per period (same as index page)
+    $latestPayrollsSubquery = DB::table('payrolls as p1')
+        ->select(
+            'p1.id',
+            'p1.employee_id',
+            'p1.pay_period_start',
+            'p1.pay_period_end',
+            'p1.status',
+            'p1.basic_salary',
+            'p1.overtime_pay',
+            'p1.overtime_hours',
+            'p1.overtime_rate',
+            'p1.allowances',
+            'p1.bonuses',
+            'p1.deductions',
+            'p1.tax_amount',
+            'p1.net_pay',
+            'p1.gross_pay',
+            'p1.night_differential_hours',
+            'p1.night_differential_rate',
+            'p1.night_differential_pay',
+            'p1.rest_day_premium_pay',
+            'p1.sss_contribution',
+            'p1.phic_contribution',
+            'p1.hdmf_contribution',
+            'p1.approved_at',
+            'p1.paid_at',
+            'p1.created_at',
+            DB::raw('ROW_NUMBER() OVER (PARTITION BY p1.employee_id, p1.pay_period_start, p1.pay_period_end ORDER BY p1.created_at DESC) as rn')
+        );
+    
+    // Build date filter for subquery
+    $subqueryBindings = [];
+    if (!empty($periodData['start_date']) && !empty($periodData['end_date'])) {
+        $latestPayrollsSubquery->where(function($q) use ($periodData) {
+            $q->where(function($subQ) use ($periodData) {
+                $subQ->whereBetween('p1.pay_period_start', [$periodData['start_date'], $periodData['end_date']]);
+            })->orWhere(function($subQ) use ($periodData) {
+                $subQ->whereBetween('p1.pay_period_end', [$periodData['start_date'], $periodData['end_date']]);
+            })->orWhere(function($subQ) use ($periodData) {
+                $subQ->where('p1.pay_period_start', '<=', $periodData['start_date'])
+                     ->where('p1.pay_period_end', '>=', $periodData['end_date']);
+            })->orWhere(function($subQ) use ($periodData) {
+                $subQ->where('p1.pay_period_start', $periodData['start_date'])
+                     ->where('p1.pay_period_end', $periodData['end_date']);
+            });
+        });
+    } elseif (!empty($periodData['start_date'])) {
+        $latestPayrollsSubquery->where('p1.pay_period_start', '>=', $periodData['start_date']);
+    } elseif (!empty($periodData['end_date'])) {
+        $latestPayrollsSubquery->where('p1.pay_period_end', '<=', $periodData['end_date']);
     }
-    if (!empty($periodData['end_date'])) {
-        $query->where('pay_period_end', $periodData['end_date']);
-    }
+    
     if (!empty($employeeIds)) {
-        $query->whereIn('employee_id', $employeeIds);
+        $latestPayrollsSubquery->whereIn('p1.employee_id', $employeeIds);
     }
 
-    $payrolls = $query->get();
+    // Get only the latest payroll per employee per period
+    $latestPayrollsQuery = DB::table(DB::raw("({$latestPayrollsSubquery->toSql()}) as latest_payrolls"))
+        ->mergeBindings($latestPayrollsSubquery)
+        ->where('latest_payrolls.rn', 1)
+        ->select('latest_payrolls.*');
+    
+    $latestPayrollIds = $latestPayrollsQuery->pluck('id')->toArray();
+    
+    // Now get the full payroll records with relationships
+    $query = Payroll::with(['employee', 'employee.department'])
+        ->whereIn('id', $latestPayrollIds);
+    
+    $payrolls = $query->orderBy('pay_period_start', 'desc')
+                      ->orderBy('employee_id')
+                      ->get();
 
     if ($payrolls->isEmpty()) {
-        throw new \Exception('No payroll records found for the selected period.');
+        $dateRange = !empty($periodData['start_date']) && !empty($periodData['end_date']) 
+            ? "from {$periodData['start_date']} to {$periodData['end_date']}" 
+            : "for the selected period";
+        throw new \Exception("No payroll records found {$dateRange}. Please generate payrolls first or select a different date range.");
     }
 
-    // FIX: Filter out or recalculate zero-value payrolls
-    $validPayrolls = $payrolls->filter(function($payroll) {
-        // Only include payrolls with actual data
-        return $payroll->basic_salary > 0 || $payroll->gross_pay > 0;
-    });
-
-    if ($validPayrolls->isEmpty()) {
-        throw new \Exception('No valid payroll records with salary data found.');
+    // Recalculate payrolls with zero values before export
+    $payrollIds = $payrolls->pluck('id')->toArray();
+    $recalculatedCount = 0;
+    foreach ($payrolls as $payroll) {
+        // Always try to recalculate if values are zero, even if employee relationship exists
+        if ($payroll->basic_salary == 0 && $payroll->gross_pay == 0) {
+            // Ensure employee relationship is loaded
+            if (!$payroll->relationLoaded('employee')) {
+                $payroll->load('employee');
+            }
+            
+            if ($payroll->employee) {
+                $this->recalculatePayrollForExport($payroll);
+                $recalculatedCount++;
+            } else {
+                Log::warning("Payroll {$payroll->id} has no employee - cannot recalculate");
+            }
+        }
     }
+    
+    Log::info("Recalculated {$recalculatedCount} payrolls before export");
+    
+    // Refresh payrolls to get updated values
+    $payrolls = Payroll::with(['employee', 'employee.department'])
+        ->whereIn('id', $payrollIds)
+        ->orderBy('pay_period_start', 'desc')
+        ->orderBy('employee_id')
+        ->get();
 
     // Log for debugging
     Log::info('Exporting payroll data', [
         'total_payrolls' => $payrolls->count(),
-        'valid_payrolls' => $validPayrolls->count(),
-        'period' => $periodData
+        'period' => $periodData,
+        'employee_ids' => $employeeIds
     ]);
 
     if ($format === 'csv') {
-        return $this->exportToCSV($validPayrolls);
+        return $this->exportToCSV($payrolls);
     } elseif ($format === 'xlsx') {
-        return $this->exportToXLSX($validPayrolls);
+        return $this->exportToXLSX($payrolls);
     } else {
         throw new \InvalidArgumentException('Unsupported format: ' . $format);
     }
@@ -432,31 +608,65 @@ private function exportToCSV($payrolls): string
     foreach ($payrolls as $payroll) {
         $employee = $payroll->employee;
         
-        // Calculate rates if not available
-        $dailyRate = $employee->daily_rate ?? (($employee->salary ?? 0) / 26);
-        $hourlyRate = $dailyRate / 8;
-        $overtimeRate = $hourlyRate * 1.25;
-        $nightDiffRate = $hourlyRate * 1.1;
+        if (!$employee) {
+            continue; // Skip if no employee
+        }
         
-        // Calculate actual amounts
+        // Get rates - prioritize employee salary, then payroll rates
+        $monthlyRate = $payroll->monthly_rate ?? $employee->salary ?? 0;
+        $semiMonthlyRate = $payroll->semi_monthly_rate ?? ($monthlyRate / 2);
+        $dailyRate = $payroll->daily_rate ?? $employee->daily_rate ?? ($monthlyRate / 26);
+        $hourlyRate = $payroll->hourly_rate ?? $employee->hourly_rate ?? ($dailyRate / 8);
+        $overtimeRate = $payroll->overtime_rate ?? ($hourlyRate * 1.25);
+        $nightDiffRate = $payroll->night_differential_rate ?? ($hourlyRate * 0.10);
+        
+        // Calculate basic salary if zero
+        $basicSalary = $payroll->basic_salary;
+        if ($basicSalary == 0) {
+            if ($semiMonthlyRate > 0) {
+                $basicSalary = $semiMonthlyRate;
+            } elseif ($monthlyRate > 0) {
+                $basicSalary = $monthlyRate / 2;
+            } elseif ($dailyRate > 0) {
+                // Calculate based on pay period days
+                $startDate = Carbon::parse($payroll->pay_period_start);
+                $endDate = Carbon::parse($payroll->pay_period_end);
+                $daysInPeriod = $startDate->diffInDays($endDate) + 1;
+                $basicSalary = $dailyRate * min($daysInPeriod, 15); // Semi-monthly typically 15 days
+            }
+        }
+        
+        // Calculate overtime pay
+        $overtimePay = $payroll->overtime_pay;
+        if ($overtimePay == 0 && ($payroll->overtime_hours ?? 0) > 0) {
         $overtimePay = ($payroll->overtime_hours ?? 0) * $overtimeRate;
+        }
+        
+        // Calculate night differential pay
+        $nightDiffPay = $payroll->night_differential_pay;
+        if ($nightDiffPay == 0 && ($payroll->night_differential_hours ?? 0) > 0) {
         $nightDiffPay = ($payroll->night_differential_hours ?? 0) * $nightDiffRate;
+        }
         
-        // Calculate gross and net pay if not set
-        $grossPay = $payroll->gross_pay ?? (
-            $payroll->basic_salary 
-            + $overtimePay
-            + $nightDiffPay
-            + ($payroll->rest_day_premium_pay ?? 0)
-            + ($payroll->allowances ?? 0)
-            + ($payroll->bonuses ?? 0)
-        );
+        // Get other components
+        $restDayPremium = $payroll->rest_day_premium_pay ?? 0;
+        $allowances = $payroll->allowances ?? 0;
+        $bonuses = $payroll->bonuses ?? 0;
+        $deductions = $payroll->deductions ?? 0;
+        $taxAmount = $payroll->tax_amount ?? 0;
         
-        $netPay = $payroll->net_pay ?? (
-            $grossPay 
-            - ($payroll->deductions ?? 0)
-            - ($payroll->tax_amount ?? 0)
-        );
+        // Calculate gross pay
+        $grossPay = $payroll->gross_pay;
+        if ($grossPay == 0) {
+            $grossPay = $basicSalary + $overtimePay + $nightDiffPay + 
+                       $restDayPremium + $allowances + $bonuses;
+        }
+        
+        // Calculate net pay
+        $netPay = $payroll->net_pay;
+        if ($netPay == 0) {
+            $netPay = $grossPay - $deductions - $taxAmount;
+        }
         
         $row = [
             $employee->employee_id ?? '',
@@ -464,25 +674,25 @@ private function exportToCSV($payrolls): string
             $employee->department->name ?? 'N/A',
             $payroll->pay_period_start,
             $payroll->pay_period_end,
-            number_format($employee->salary ?? 0, 2),
-            number_format(($employee->salary ?? 0) / 2, 2),
+            number_format($monthlyRate, 2),
+            number_format($semiMonthlyRate, 2),
             number_format($dailyRate, 2),
             number_format($hourlyRate, 2),
             $this->calculateDaysWorked($payroll),
-            number_format($payroll->basic_salary, 2),
+            number_format($basicSalary, 2), // Use calculated basic salary
             number_format($payroll->overtime_hours ?? 0, 2),
             number_format($overtimeRate, 2),
-            number_format($overtimePay, 2),
+            number_format($overtimePay, 2), // Use calculated overtime pay
             number_format($payroll->night_differential_hours ?? 0, 2),
             number_format($nightDiffRate, 2),
-            number_format($nightDiffPay, 2),
-            number_format($payroll->rest_day_premium_pay ?? 0, 2),
-            number_format($payroll->allowances ?? 0, 2),
-            number_format($payroll->bonuses ?? 0, 2),
-            number_format($payroll->deductions ?? 0, 2),
-            number_format($payroll->tax_amount ?? 0, 2),
-            number_format($grossPay, 2),
-            number_format($netPay, 2),
+            number_format($nightDiffPay, 2), // Use calculated night diff pay
+            number_format($restDayPremium, 2),
+            number_format($allowances, 2),
+            number_format($bonuses, 2),
+            number_format($deductions, 2),
+            number_format($taxAmount, 2),
+            number_format($grossPay, 2), // Use calculated gross pay
+            number_format($netPay, 2), // Use calculated net pay
             number_format($payroll->sss_contribution ?? 450, 2),
             number_format($payroll->phic_contribution ?? 225.88, 2),
             number_format($payroll->hdmf_contribution ?? 100, 2),
@@ -492,6 +702,92 @@ private function exportToCSV($payrolls): string
         ];
         fputcsv($handle, $row);
     }
+    
+    // Calculate totals from actual calculated values (recalculate for totals)
+    $totalBasicSalary = 0;
+    $totalOvertimePay = 0;
+    $totalAllowances = 0;
+    $totalBonuses = 0;
+    $totalDeductions = 0;
+    $totalTaxAmount = 0;
+    $totalGrossPay = 0;
+    $totalNetPay = 0;
+    
+    foreach ($payrolls as $payroll) {
+        $employee = $payroll->employee;
+        if (!$employee) continue;
+        
+        $monthlyRate = $payroll->monthly_rate ?? $employee->salary ?? 0;
+        $semiMonthlyRate = $payroll->semi_monthly_rate ?? ($monthlyRate / 2);
+        $dailyRate = $payroll->daily_rate ?? $employee->daily_rate ?? ($monthlyRate / 26);
+        $hourlyRate = $payroll->hourly_rate ?? $employee->hourly_rate ?? ($dailyRate / 8);
+        $overtimeRate = $payroll->overtime_rate ?? ($hourlyRate * 1.25);
+        
+        $basicSalary = $payroll->basic_salary;
+        if ($basicSalary == 0) {
+            $basicSalary = $semiMonthlyRate > 0 ? $semiMonthlyRate : ($monthlyRate > 0 ? $monthlyRate / 2 : 0);
+        }
+        
+        $overtimePay = $payroll->overtime_pay;
+        if ($overtimePay == 0 && ($payroll->overtime_hours ?? 0) > 0) {
+            $overtimePay = ($payroll->overtime_hours ?? 0) * $overtimeRate;
+        }
+        
+        $grossPay = $payroll->gross_pay;
+        if ($grossPay == 0) {
+            $grossPay = $basicSalary + $overtimePay + ($payroll->night_differential_pay ?? 0) + 
+                       ($payroll->rest_day_premium_pay ?? 0) + ($payroll->allowances ?? 0) + ($payroll->bonuses ?? 0);
+        }
+        
+        $netPay = $payroll->net_pay;
+        if ($netPay == 0) {
+            $netPay = $grossPay - ($payroll->deductions ?? 0) - ($payroll->tax_amount ?? 0);
+        }
+        
+        $totalBasicSalary += $basicSalary;
+        $totalOvertimePay += $overtimePay;
+        $totalAllowances += $payroll->allowances ?? 0;
+        $totalBonuses += $payroll->bonuses ?? 0;
+        $totalDeductions += $payroll->deductions ?? 0;
+        $totalTaxAmount += $payroll->tax_amount ?? 0;
+        $totalGrossPay += $grossPay;
+        $totalNetPay += $netPay;
+    }
+    
+    // Add summary/total row
+    $totals = [
+        '',
+        '',
+        'TOTAL:',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        number_format($totalBasicSalary, 2),
+        '',
+        '',
+        number_format($totalOvertimePay, 2),
+        '',
+        '',
+        '',
+        '',
+        number_format($totalAllowances, 2),
+        number_format($totalBonuses, 2),
+        number_format($totalDeductions, 2),
+        number_format($totalTaxAmount, 2),
+        number_format($totalGrossPay, 2),
+        number_format($totalNetPay, 2),
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
+    ];
+    fputcsv($handle, $totals);
 
     fclose($handle);
 

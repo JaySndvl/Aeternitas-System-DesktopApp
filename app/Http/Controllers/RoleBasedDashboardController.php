@@ -195,11 +195,22 @@ class RoleBasedDashboardController extends Controller
             ->orderBy('year', 'desc')
             ->get();
 
+        // Get today's attendance record
+        $todayAttendance = $employee->getTodayAttendance();
+
+        // Get recent activity (last 5 days)
+        $recentActivity = $employee->attendanceRecords()
+            ->where('date', '>=', today()->subDays(5))
+            ->orderBy('date', 'desc')
+            ->get();
+
         return view('dashboards.employee', compact(
             'stats',
             'recent_payrolls',
             'yearly_summary',
-            'employee'
+            'employee',
+            'todayAttendance',
+            'recentActivity'
         ));
     }
 }

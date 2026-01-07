@@ -212,7 +212,7 @@
                             @if($position->min_salary && $position->max_salary)
                             <div class="flex justify-between">
                                 <span class="text-sm text-gray-500">Salary Range</span>
-                                <span class="text-sm font-medium text-gray-900">${{ number_format($position->min_salary, 0) }} - ${{ number_format($position->max_salary, 0) }}</span>
+                                <span class="text-sm font-medium text-gray-900">₱{{ number_format($position->min_salary, 0) }} - ₱{{ number_format($position->max_salary, 0) }}</span>
                             </div>
                             @endif
                         </div>

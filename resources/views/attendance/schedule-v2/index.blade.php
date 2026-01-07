@@ -211,7 +211,7 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($employees as $employee)
+                        @foreach($filteredEmployees as $employee)
                             <tr class="employee-row hover:bg-gray-50 transition-colors" data-employee-id="{{ $employee->id }}">
                                 <td class="px-6 py-5 whitespace-nowrap border-r border-gray-200">
                                     <div class="flex items-center">

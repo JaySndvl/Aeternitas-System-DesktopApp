@@ -10,14 +10,28 @@
             <div class="py-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Period Management</h1>
-                        <p class="mt-1 text-sm text-gray-600">Manage and analyze employee attendance records by time periods</p>
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            @if($user->role === 'employee')
+                                My Periods
+                            @else
+                                Period Management
+                            @endif
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-600">
+                            @if($user->role === 'employee')
+                                View periods that include your attendance records
+                            @else
+                                Manage and analyze employee attendance records by time periods
+                            @endif
+                        </p>
                     </div>
                     <div class="flex space-x-3">
+                        @if($user->role !== 'employee')
                         <a href="{{ route('attendance.period-management.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-plus mr-2"></i>
                             Create New Period
                         </a>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -87,13 +101,27 @@
                 <div class="mx-auto h-24 w-24 text-gray-400">
                     <i class="fas fa-calendar-alt text-6xl"></i>
                 </div>
-                <h3 class="mt-4 text-lg font-medium text-gray-900">No periods created yet</h3>
-                <p class="mt-2 text-sm text-gray-600">Get started by creating your first period to analyze attendance records.</p>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">
+                    @if($user->role === 'employee')
+                        No periods found
+                    @else
+                        No periods created yet
+                    @endif
+                </h3>
+                <p class="mt-2 text-sm text-gray-600">
+                    @if($user->role === 'employee')
+                        You are not currently included in any active periods.
+                    @else
+                        Get started by creating your first period to analyze attendance records.
+                    @endif
+                </p>
                 <div class="mt-6">
+                    @if($user->role !== 'employee')
                     <a href="{{ route('attendance.period-management.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                         <i class="fas fa-plus mr-2"></i>
                         Create Your First Period
                     </a>
+                    @endif
                 </div>
             </div>
         @else
@@ -143,11 +171,13 @@
                                                 View
                                             </a>
                                             
+                                            @if($user->role !== 'employee')
                                             <button type="button" onclick="openDeleteModal('{{ $period->id }}', '{{ addslashes($period->name) }}')" 
                                                     class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-md text-sm font-medium hover:bg-red-200 transition-colors">
                                                 <i class="fas fa-trash mr-1"></i>
                                                 Delete
                                             </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

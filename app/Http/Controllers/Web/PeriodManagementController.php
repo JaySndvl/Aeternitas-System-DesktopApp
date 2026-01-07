@@ -23,11 +23,23 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
-        $periods = Period::with('department')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $periodsQuery = Period::with('department');
         
-       
+        // If user is an employee, only show periods that include them
+        if ($user->role === 'employee') {
+            $employee = $user->employee;
+            if (!$employee) {
+                return redirect()->route('dashboard')->with('error', 'Employee record not found.');
+            }
+            $periodsQuery->where(function ($query) use ($employee) {
+                $query->whereNull('employee_ids')
+                      ->orWhereJsonContains('employee_ids', $employee->id)
+                      ->orWhere('department_id', $employee->department_id);
+            });
+        }
+        
+        $periods = $periodsQuery->orderBy('created_at', 'desc')->get();
+        
         $filters = $this->getFilterState($request);
         
         return view('attendance.period-management.index', compact('periods', 'user', 'filters'));
@@ -39,6 +51,12 @@ class PeriodManagementController extends Controller
     public function create(Request $request)
     {
         $user = Auth::user();
+        
+        // Only HR and Admin can create periods
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'You do not have permission to create periods.');
+        }
         
         // Get departments and employees for filtering
         $departments = \App\Models\Department::orderBy('name')->get();
@@ -55,6 +73,14 @@ class PeriodManagementController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        
+        // Only HR and Admin can create periods
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'You do not have permission to create periods.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
@@ -93,6 +119,33 @@ class PeriodManagementController extends Controller
         if (!$period) {
             return redirect()->route('attendance.period-management.index')
                 ->with('error', 'Period not found.');
+        }
+        
+        // Check if user has permission to view this period
+        if ($user->role === 'employee') {
+            $employee = $user->employee;
+            if (!$employee) {
+                return redirect()->route('dashboard')->with('error', 'Employee record not found.');
+            }
+            
+            $hasAccess = false;
+            // Check if period includes this employee
+            if (!empty($period->employee_ids) && in_array($employee->id, $period->employee_ids)) {
+                $hasAccess = true;
+            }
+            // Check if period is for employee's department
+            elseif ($period->department_id && $period->department_id === $employee->department_id) {
+                $hasAccess = true;
+            }
+            // Check if period has no specific employee/department restrictions
+            elseif (empty($period->employee_ids) && !$period->department_id) {
+                $hasAccess = true;
+            }
+            
+            if (!$hasAccess) {
+                return redirect()->route('attendance.period-management.index')
+                    ->with('error', 'You do not have permission to view this period.');
+            }
         }
         
         // Convert to Carbon dates
@@ -138,6 +191,14 @@ class PeriodManagementController extends Controller
      */
     public function destroy(Request $request, $periodId = null)
     {
+        $user = Auth::user();
+        
+        // Only HR and Admin can delete periods
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'You do not have permission to delete periods.');
+        }
+
         // Handle both URL parameter and form submission
         $targetPeriodId = $periodId ?: $request->input('period_id');
         
@@ -1000,6 +1061,12 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
+        // Only HR and Admin can preview payroll
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'You do not have permission to preview payroll.');
+        }
+        
         // Find the specific period from database
         $period = Period::with('department')->find($periodId);
         
@@ -1103,6 +1170,12 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
+        // Only HR and Admin can generate payroll
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'You do not have permission to generate payroll.');
+        }
+        
         // Get preview data from session
         $previewData = session('payroll_preview');
         
@@ -1161,6 +1234,12 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
+        // Only HR and Admin can view payroll summary
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'You do not have permission to view payroll summary.');
+        }
+        
         // Find the specific period from database
         $period = Period::with('department')->find($periodId);
         
@@ -1210,6 +1289,12 @@ class PeriodManagementController extends Controller
     public function exportPayroll(Request $request, $periodId)
     {
         $user = Auth::user();
+        
+        // Only HR and Admin can export payroll
+        if (!in_array($user->role, ['admin', 'hr'])) {
+            return redirect()->route('attendance.period-management.index')
+                ->with('error', 'You do not have permission to export payroll.');
+        }
         
         // Find the specific period from database
         $period = Period::with('department')->find($periodId);

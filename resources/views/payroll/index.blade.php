@@ -11,9 +11,6 @@
             <p class="mt-1 text-sm text-gray-600">Manage employee salaries, deductions, and payments</p>
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
-            <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-download mr-2"></i>
-                Export Payroll
         <form action="{{ route('payrolls.generate') }}" method="POST" class="inline" id="generatePayrollForm">
             @csrf
             <input type="hidden" name="start_date" id="generateStartDate" value="">
@@ -68,7 +65,7 @@
                     <div class="relative">
                         <button onclick="toggleCalendar()" 
                                 id="dateRangeButton" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-left flex items-center justify-between">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-left flex items-center justify-between">
                             <span id="dateRangeText">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
                             <i class="fas fa-calendar-alt text-gray-400"></i>
                         </button>
@@ -148,7 +145,7 @@
                 <!-- Department Filter -->
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                    <select name="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select name="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Departments</option>
                         @foreach($departments as $department)
                             <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
@@ -161,7 +158,7 @@
                 <!-- Status Filter -->
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Status</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
@@ -172,7 +169,7 @@
                 <!-- Employee Filter -->
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-                    <select name="employee_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select name="employee_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Employees</option>
                         @foreach($employees as $employee)
                             <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
@@ -336,8 +333,9 @@
         </div>
         
         <!-- Hidden data for JavaScript -->
-        <script type="application/json" id="employeesData">
-            {!! json_encode($employees->map(function($employee) {
+        <script>
+            // Make employees data globally available
+            window.allEmployeesData = {!! json_encode($employees->map(function($employee) {
                 return [
                     'id' => $employee->id,
                     'full_name' => $employee->full_name,
@@ -347,7 +345,7 @@
                     'hourly_rate' => $employee->hourly_rate,
                     'overtime_rate' => $employee->overtime_rate
                 ];
-            })) !!}
+            })) !!};
         </script>
         
         <!-- Pagination Controls -->
@@ -356,6 +354,7 @@
             <div class="flex items-center space-x-2">
                 <button id="prevEmployeePage" 
                         onclick="changeEmployeePage(-1)" 
+                        type="button"
                         class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled>
                     <i class="fas fa-chevron-left mr-1"></i>
@@ -363,7 +362,8 @@
                 </button>
                 <button id="nextEmployeePage" 
                         onclick="changeEmployeePage(1)" 
-                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                        type="button"
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Next
                     <i class="fas fa-chevron-right ml-1"></i>
                 </button>
@@ -833,7 +833,8 @@
             </button>
         </form>
 
-        <!-- Generate Payslips -->
+        <!-- Generate Payslips - Only for admin/hr/manager -->
+        @if(!in_array(auth()->user()->role ?? '', ['employee']))
         <div class="flex items-center space-x-2">
             <!-- Generate Payslips Button -->
             <form action="{{ route('payrolls.generate-payslips') }}" method="POST" class="inline" id="payslipForm">
@@ -847,8 +848,8 @@
                 </button>
             </form>
 
-            <!-- Download All Payslips Button (if there are generated payslips) -->
-            @if(isset($payslip_results) && count($payslip_results) > 0)
+            <!-- Download All Payslips Button (if there are generated payslips) - Only for admin/hr/manager -->
+            @if(isset($payslip_results) && count($payslip_results) > 0 && !in_array(auth()->user()->role ?? '', ['employee']))
             <a href="{{ route('payrolls.download-all-payslips', ['start_date' => request('start_date', date('Y-m-d')), 'end_date' => request('end_date', date('Y-m-d'))]) }}"
             class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                 <i class="fas fa-download mr-2"></i>
@@ -856,7 +857,11 @@
             </a>
             @endif
         </div>
+        @endif
 
+        <!-- Export Payroll - Only for admin/hr/manager -->
+        @if(!in_array(auth()->user()->role ?? '', ['employee']))
+        <div class="flex items-center space-x-2">
         <!-- Export with Calculations Button -->
         <button type="button" onclick="exportPayrollWithCalculations()" 
                 class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
@@ -864,30 +869,42 @@
             Export with Calculations
         </button>
 
-        <!-- Export to Excel - UPDATED with dropdown format selector -->
-        <form action="{{ route('payrolls.export-payroll') }}" method="POST" class="inline" id="exportForm">
+            <!-- Export Payroll Dropdown -->
+            <div class="relative inline-block" id="exportDropdownContainer">
+                <form action="{{ route('payrolls.export-payroll') }}" method="POST" class="inline" id="exportForm" onsubmit="return false;">
             @csrf
             <input type="hidden" name="start_date" id="exportStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
             <input type="hidden" name="end_date" id="exportEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
-            <input type="hidden" name="format" id="exportFormat" value="csv">
-            <div class="relative group">
-                <button type="submit" 
-                        onclick="return confirm('Export payroll data?')"
+                    <input type="hidden" name="format" id="exportFormat" value="pdf">
+                    <button type="button" 
+                            id="exportPayrollButton"
+                            onclick="event.preventDefault(); event.stopPropagation(); toggleExportDropdownDirect(event); return false;"
                         class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                     <i class="fas fa-download mr-2"></i>
-                    Export to Excel
+                        Export Payroll
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
                 </button>
-                <!-- Format dropdown (optional) -->
-                <div class="absolute left-0 mt-1 hidden group-hover:block bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
-                    <button type="button" onclick="setExportFormat('csv')" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <i class="fas fa-file-csv mr-2"></i>CSV Format
+                </form>
+                <!-- Export Format Dropdown -->
+                <div id="exportDropdown" style="display: none !important;" class="absolute right-0 top-full mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-2xl z-[9999] min-w-[200px] overflow-hidden">
+                    <div class="py-2">
+                        <button type="button" onclick="exportPayroll('pdf'); return false;" class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors border-b border-gray-100">
+                            <i class="fas fa-file-pdf mr-3 text-red-600 text-lg"></i>
+                            <span>Export to PDF</span>
                     </button>
-                    <button type="button" onclick="setExportFormat('xlsx')" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <i class="fas fa-file-excel mr-2"></i>Excel Format
+                        <button type="button" onclick="exportPayroll('csv'); return false;" class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center transition-colors border-b border-gray-100">
+                            <i class="fas fa-file-csv mr-3 text-green-600 text-lg"></i>
+                            <span>Export to CSV</span>
+                        </button>
+                        <button type="button" onclick="exportPayroll('xlsx'); return false;" class="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center transition-colors">
+                            <i class="fas fa-file-excel mr-3 text-blue-600 text-lg"></i>
+                            <span>Export to Excel</span>
                     </button>
                 </div>
             </div>
-        </form>
+            </div>
+        </div>
+        @endif
     </div>
 
     <!-- Mark as Paid (Individual) -->
@@ -1068,9 +1085,9 @@ async function exportPayrollWithCalculations() {
                 <button onclick="closePayrollModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
                     Close
                 </button>
-                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-print mr-2"></i>Print Payslip
-                </button>
+                <a id="downloadPayslipLink" href="#" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+                    <i class="fas fa-download mr-2"></i>Download Payslip
+                </a>
 
                 <!-- Payment Modal -->
 <div id="paymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
@@ -1097,7 +1114,7 @@ async function exportPayrollWithCalculations() {
                 <!-- Payment Method -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                    <select id="paymentMethod" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select id="paymentMethod" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="bank_transfer">Bank Transfer</option>
                         <option value="cash">Cash</option>
                         <option value="check">Check</option>
@@ -1157,8 +1174,14 @@ async function exportPayrollWithCalculations() {
 </div>
 <script>
 // Modal Functions
-function openPayrollModal() {
+function openPayrollModal(payrollId) {
     document.getElementById('payrollModal').classList.remove('hidden');
+    
+    // Set the download payslip link
+    const downloadLink = document.getElementById('downloadPayslipLink');
+    if (downloadLink && payrollId) {
+        downloadLink.href = '{{ route("payrolls.download-payslip", ":id") }}'.replace(':id', payrollId);
+    }
 }
 
 function closePayrollModal() {
@@ -1595,12 +1618,20 @@ function updateAllDateFormFields() {
             }
         });
         
-        // Update debug info
-        document.getElementById('debugStartDate').textContent = fromDate;
-        document.getElementById('debugEndDate').textContent = toDate;
+        // Update debug info (if elements exist)
+        const debugStartDate = document.getElementById('debugStartDate');
+        const debugEndDate = document.getElementById('debugEndDate');
+        if (debugStartDate) {
+            debugStartDate.textContent = fromDate;
+        }
+        if (debugEndDate) {
+            debugEndDate.textContent = toDate;
+        }
         
         // Check approved payrolls
+        if (typeof checkApprovedPayrolls === 'function') {
         checkApprovedPayrolls(fromDate, toDate);
+        }
     }
 }
 
@@ -1661,26 +1692,93 @@ let allEmployees = [];
 
 // Initialize employee data from server
 function initializeEmployeeData() {
-    // Get all employee data from the server-side JSON
+    // Get all employee data from the global variable (most reliable method)
+    if (window.allEmployeesData && Array.isArray(window.allEmployeesData) && window.allEmployeesData.length > 0) {
+        allEmployees = window.allEmployeesData.map(employee => ({
+            html: generateEmployeeCardHTML(employee),
+            name: employee.full_name,
+            id: employee.employee_id
+        }));
+        
+        // Update display and controls
+        updatePaginationControls();
+        return true; // Successfully initialized
+    }
+    
+    // Fallback: Try to get from JSON script tag
     const employeesDataScript = document.getElementById('employeesData');
     if (employeesDataScript) {
-        const employeesData = JSON.parse(employeesDataScript.textContent);
+        let jsonText = '';
+        if (employeesDataScript.textContent) {
+            jsonText = employeesDataScript.textContent.trim();
+        } else if (employeesDataScript.innerHTML) {
+            jsonText = employeesDataScript.innerHTML.trim();
+        }
+        
+        if (jsonText) {
+            try {
+                const employeesData = JSON.parse(jsonText);
+                if (Array.isArray(employeesData) && employeesData.length > 0) {
         allEmployees = employeesData.map(employee => ({
             html: generateEmployeeCardHTML(employee),
             name: employee.full_name,
             id: employee.employee_id
         }));
         updatePaginationControls();
-    } else {
-        // Fallback: use the employees that are already on the page
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error parsing employees JSON:', e);
+            }
+        }
+    }
+    
+    // Fallback: Try to get total count and build from existing cards + server data
+    // Get total employee count from pagination info
+    const paginationInfo = document.getElementById('employeePaginationInfo');
+    let totalEmployees = 0;
+    
+    if (paginationInfo) {
+        const match = paginationInfo.textContent.match(/of (\d+)/);
+        if (match) {
+            totalEmployees = parseInt(match[1]);
+        }
+    }
+    
+    // If we have the JSON script but parsing failed, try to extract data differently
+    if (employeesDataScript && totalEmployees > 0) {
+        // Try innerHTML as fallback
+        try {
+            const jsonText = employeesDataScript.innerHTML.trim();
+            const employeesData = JSON.parse(jsonText);
+            if (Array.isArray(employeesData) && employeesData.length > 0) {
+                allEmployees = employeesData.map(employee => ({
+                    html: generateEmployeeCardHTML(employee),
+                    name: employee.full_name,
+                    id: employee.employee_id
+                }));
+                updatePaginationControls();
+                return true;
+            }
+        } catch (e) {
+            // Continue to card-based fallback
+        }
+    }
+    
+    // Last resort: Use cards on page (but this only works if all employees are on page 1)
         const employeeCards = document.querySelectorAll('.employee-card');
+    if (employeeCards.length > 0 && totalEmployees === employeeCards.length) {
+        // Only use this if we have all employees on the page
         allEmployees = Array.from(employeeCards).map(card => ({
             html: card.outerHTML,
-            name: card.querySelector('h4').textContent,
-            id: card.querySelector('span').textContent
+            name: card.querySelector('h4')?.textContent || '',
+            id: card.querySelector('span')?.textContent || ''
         }));
         updatePaginationControls();
+        return true;
     }
+    
+    return false; // Failed to initialize
 }
 
 function generateEmployeeCardHTML(employee) {
@@ -1736,6 +1834,18 @@ function sortBy(field) {
 }
 
 function changeEmployeePage(direction) {
+    // If employees not loaded, try to initialize first
+    if (!allEmployees || allEmployees.length === 0) {
+        console.warn('Employees not loaded, attempting to initialize...');
+        initializeEmployeeData();
+        
+        // If still empty after initialization, use fallback
+        if (!allEmployees || allEmployees.length === 0) {
+            console.error('Failed to load employees data');
+            return;
+        }
+    }
+    
     const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
     const newPage = currentEmployeePage + direction;
     
@@ -1750,6 +1860,16 @@ function changeEmployeePage(direction) {
 
 function updateEmployeeDisplay() {
     const container = document.getElementById('employeeCardsContainer');
+    if (!container) {
+        console.error('Employee cards container not found');
+        return;
+    }
+    
+    if (!allEmployees || allEmployees.length === 0) {
+        console.error('No employees data available');
+        return;
+    }
+    
     const startIndex = (currentEmployeePage - 1) * employeesPerPage;
     const endIndex = startIndex + employeesPerPage;
     const currentEmployees = allEmployees.slice(startIndex, endIndex);
@@ -1766,35 +1886,53 @@ function updateEmployeeDisplay() {
 }
 
 function updatePaginationControls() {
+    if (!allEmployees || allEmployees.length === 0) {
+        return;
+    }
+    
     const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
     const startIndex = (currentEmployeePage - 1) * employeesPerPage + 1;
     const endIndex = Math.min(currentEmployeePage * employeesPerPage, allEmployees.length);
     
     // Update page info
-    document.getElementById('employeePaginationInfo').textContent = 
+    const paginationInfo = document.getElementById('employeePaginationInfo');
+    if (paginationInfo) {
+        paginationInfo.textContent = 
         `Showing ${startIndex}-${endIndex} of ${allEmployees.length} employees`;
+    }
     
     // Update page numbers
-    document.getElementById('currentEmployeePage').textContent = currentEmployeePage;
-    document.getElementById('totalEmployeePages').textContent = totalPages;
+    const currentPageEl = document.getElementById('currentEmployeePage');
+    const totalPagesEl = document.getElementById('totalEmployeePages');
+    if (currentPageEl) {
+        currentPageEl.textContent = currentEmployeePage;
+    }
+    if (totalPagesEl) {
+        totalPagesEl.textContent = totalPages;
+    }
     
     // Update button states
     const prevButton = document.getElementById('prevEmployeePage');
     const nextButton = document.getElementById('nextEmployeePage');
     
-    prevButton.disabled = currentEmployeePage === 1;
-    nextButton.disabled = currentEmployeePage === totalPages;
-    
-    if (prevButton.disabled) {
+    if (prevButton) {
+        const shouldDisable = currentEmployeePage === 1;
+        prevButton.disabled = shouldDisable;
+        if (shouldDisable) {
         prevButton.classList.add('opacity-50', 'cursor-not-allowed');
     } else {
         prevButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     }
     
-    if (nextButton.disabled) {
+    if (nextButton) {
+        const shouldDisable = currentEmployeePage >= totalPages;
+        nextButton.disabled = shouldDisable;
+        if (shouldDisable) {
         nextButton.classList.add('opacity-50', 'cursor-not-allowed');
     } else {
         nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     }
 }
 
@@ -2025,26 +2163,208 @@ function loadApprovedPayrolls() {
     });
 }
 
-// Set export format
-function setExportFormat(format) {
-    const formatInput = document.querySelector('input[name="format"]');
-    if (formatInput) {
+// Initialize export dropdown on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const exportButton = document.getElementById('exportPayrollButton');
+    const exportDropdown = document.getElementById('exportDropdown');
+    const exportContainer = document.getElementById('exportDropdownContainer');
+    
+    console.log('Export dropdown initialization check:', {
+        button: !!exportButton,
+        dropdown: !!exportDropdown,
+        container: !!exportContainer
+    });
+    
+    if (exportButton && exportDropdown) {
+        console.log('Export dropdown initialized');
+        
+        // Toggle dropdown on button click
+        exportButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            console.log('Export button clicked');
+            
+            // Use setTimeout to ensure this runs after any other handlers
+            setTimeout(function() {
+                const isHidden = exportDropdown.classList.contains('hidden') || exportDropdown.style.display === 'none';
+                
+                console.log('Dropdown is hidden:', isHidden);
+                console.log('Dropdown current display:', exportDropdown.style.display);
+                console.log('Dropdown classes:', exportDropdown.className);
+                
+                // Close all other dropdowns first
+                document.querySelectorAll('[id$="Dropdown"]').forEach(dd => {
+                    if (dd !== exportDropdown && dd.id) {
+                        dd.classList.add('hidden');
+                        dd.style.display = 'none';
+                    }
+                });
+                
+                // Toggle this dropdown
+                if (isHidden) {
+                    exportDropdown.classList.remove('hidden');
+                    exportDropdown.style.removeProperty('display');
+                    exportDropdown.style.visibility = 'visible';
+                    exportDropdown.style.opacity = '1';
+                    exportDropdown.style.position = 'absolute';
+                    console.log('Dropdown shown');
+                    console.log('Dropdown after show - display:', window.getComputedStyle(exportDropdown).display);
+                    console.log('Dropdown after show - visibility:', window.getComputedStyle(exportDropdown).visibility);
+                } else {
+                    exportDropdown.classList.add('hidden');
+                    exportDropdown.style.display = 'none';
+                    console.log('Dropdown hidden');
+                }
+            }, 0);
+        });
+        
+        // Close dropdown when clicking outside (with delay to allow button click)
+        let clickOutsideHandler = null;
+        setTimeout(function() {
+            clickOutsideHandler = function(e) {
+                // Don't close if clicking on the button or dropdown
+                if (exportContainer && exportContainer.contains(e.target)) {
+                    return;
+                }
+                
+                // Don't close if clicking on dropdown items
+                if (exportDropdown && exportDropdown.contains(e.target)) {
+                    return;
+                }
+                
+                // Close dropdown
+                if (exportDropdown && !exportDropdown.classList.contains('hidden')) {
+                    console.log('Closing dropdown - clicked outside');
+                    exportDropdown.classList.add('hidden');
+                    exportDropdown.style.display = 'none';
+                }
+            };
+            
+            // Use a slight delay to prevent immediate closing
+            document.addEventListener('click', function(e) {
+                setTimeout(function() {
+                    if (clickOutsideHandler) {
+                        clickOutsideHandler(e);
+                    }
+                }, 10);
+            });
+        }, 500);
+    } else {
+        console.error('Export elements not found:', {
+            button: !!exportButton,
+            dropdown: !!exportDropdown,
+            container: !!exportContainer
+        });
+    }
+});
+
+// Direct toggle function for onclick handler
+function toggleExportDropdownDirect(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    }
+    
+    console.log('toggleExportDropdownDirect called');
+    
+    const dropdown = document.getElementById('exportDropdown');
+    const button = document.getElementById('exportPayrollButton');
+    
+    if (!dropdown) {
+        console.error('Export dropdown not found');
+        alert('Export dropdown element not found. Please refresh the page.');
+        return false;
+    }
+    
+    if (!button) {
+        console.error('Export button not found');
+        return false;
+    }
+    
+    // Check if dropdown is currently visible
+    const computedStyle = window.getComputedStyle(dropdown);
+    const isHidden = dropdown.style.display === 'none' || 
+                     dropdown.style.display === '' && computedStyle.display === 'none' ||
+                     dropdown.classList.contains('hidden');
+    
+    console.log('Dropdown state check:', {
+        styleDisplay: dropdown.style.display,
+        computedDisplay: computedStyle.display,
+        hasHiddenClass: dropdown.classList.contains('hidden'),
+        isHidden: isHidden
+    });
+    
+    // Close all other dropdowns first
+    document.querySelectorAll('[id$="Dropdown"]').forEach(dd => {
+        if (dd !== dropdown && dd.id) {
+            dd.classList.add('hidden');
+            dd.style.display = 'none';
+    }
+    });
+    
+    // Toggle this dropdown
+    if (isHidden) {
+        // Remove hidden class
+        dropdown.classList.remove('hidden');
+        
+        // Force display with !important via style attribute
+        dropdown.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important; position: absolute !important;');
+        
+        console.log('Dropdown shown');
+        console.log('After show - style display:', dropdown.style.display);
+        console.log('After show - computed display:', window.getComputedStyle(dropdown).display);
+        console.log('After show - offsetHeight:', dropdown.offsetHeight);
+        console.log('After show - offsetWidth:', dropdown.offsetWidth);
+    } else {
+        dropdown.classList.add('hidden');
+        dropdown.setAttribute('style', 'display: none !important;');
+        console.log('Dropdown hidden');
+    }
+    
+    return false;
+}
+
+// Toggle export dropdown (for backward compatibility)
+function toggleExportDropdown(e) {
+    return toggleExportDropdownDirect(e);
+}
+
+// Export payroll in specified format
+function exportPayroll(format) {
+    const formatInput = document.getElementById('exportFormat');
+    const exportForm = document.getElementById('exportForm');
+    
+    if (formatInput && exportForm) {
         formatInput.value = format;
-    }
-    
-    const button = document.querySelector('#exportForm button[type="submit"]');
-    if (button) {
-        const formatText = format === 'xlsx' ? 'Excel' : 'CSV';
-        const icon = format === 'xlsx' ? 'fa-file-excel' : 'fa-file-csv';
-        button.innerHTML = `<i class="fas ${icon} mr-2"></i>Export to ${formatText}`;
-    }
-    
-    // Submit form after a brief delay
-    setTimeout(() => {
-        if (confirm(`Export payroll data to ${format.toUpperCase()}?`)) {
-            document.getElementById('exportForm').submit();
+        
+        // Close dropdown
+        const dropdown = document.getElementById('exportDropdown');
+        if (dropdown) {
+            dropdown.classList.add('hidden');
         }
-    }, 100);
+        
+        // Get format display name
+        const formatNames = {
+            'pdf': 'PDF',
+            'csv': 'CSV',
+            'xlsx': 'Excel'
+        };
+        
+        const formatName = formatNames[format] || format.toUpperCase();
+        
+        // Confirm and submit
+        if (confirm(`Export payroll data to ${formatName}?`)) {
+            exportForm.submit();
+        }
+    }
+}
+
+// Set export format (legacy function for compatibility)
+function setExportFormat(format) {
+    exportPayroll(format);
 }
 
 // Generate Payslips function
@@ -2448,10 +2768,20 @@ async function checkApprovedPayrolls(startDate, endDate) {
         const response = await fetch(`/ajax/payrolls/approved?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
         const data = await response.json();
         
-        // Update debug info
-        document.getElementById('debugApprovedCount').textContent = data.length;
-        document.getElementById('debugStartDate').textContent = startDate;
-        document.getElementById('debugEndDate').textContent = endDate;
+        // Update debug info (if elements exist)
+        const debugApprovedCount = document.getElementById('debugApprovedCount');
+        const debugStartDate = document.getElementById('debugStartDate');
+        const debugEndDate = document.getElementById('debugEndDate');
+        
+        if (debugApprovedCount) {
+            debugApprovedCount.textContent = data.length;
+        }
+        if (debugStartDate) {
+            debugStartDate.textContent = startDate;
+        }
+        if (debugEndDate) {
+            debugEndDate.textContent = endDate;
+        }
         
         return data.length;
     } catch (error) {
@@ -2502,9 +2832,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize with current month
     setDateRange('thisMonth');
     
-    // Initialize employee pagination
+    // Initialize employee pagination - wait a bit for script tags to be parsed
+    setTimeout(function() {
     initializeEmployeeData();
-    updatePaginationControls();
+    }, 100);
+    
+    // Also attach event listeners as backup (in addition to onclick attributes)
+    setTimeout(function() {
+        const prevButton = document.getElementById('prevEmployeePage');
+        const nextButton = document.getElementById('nextEmployeePage');
+        
+        if (prevButton) {
+            prevButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                changeEmployeePage(-1);
+            });
+        }
+        
+        if (nextButton) {
+            nextButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                changeEmployeePage(1);
+            });
+        }
+    }, 200);
     
     // Close calendar when clicking outside
     document.addEventListener('click', function(e) {

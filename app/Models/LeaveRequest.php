@@ -63,4 +63,9 @@ class LeaveRequest extends Model
     {
         return $this->belongsTo(Account::class, 'approved_by');
     }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'approved_by');
+    }
 }

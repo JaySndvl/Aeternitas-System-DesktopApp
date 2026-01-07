@@ -7,14 +7,31 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Daily Attendance</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Attendance Records</h1>
             <p class="mt-1 text-sm text-gray-600">View daily attendance records</p>
         </div>
         <div class="mt-4 sm:mt-0">
-            <button class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-download mr-2"></i>
-                Export Report
-            </button>
+            <!-- Export Dropdown -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-download mr-2"></i>
+                    Export Report
+                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                </button>
+                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div class="py-1">
+                        <a href="{{ route('attendance.daily.export', ['format' => 'pdf']) . '?date=' . $date->format('Y-m-d') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-file-pdf mr-2 text-red-500"></i>Export as PDF
+                        </a>
+                        <a href="{{ route('attendance.daily.export', ['format' => 'csv']) . '?date=' . $date->format('Y-m-d') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-file-csv mr-2 text-green-500"></i>Export as CSV
+                        </a>
+                        <a href="{{ route('attendance.daily.export', ['format' => 'xls']) . '?date=' . $date->format('Y-m-d') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-file-excel mr-2 text-green-600"></i>Export as Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -24,7 +41,7 @@
             <div class="flex-1">
                 <label for="date" class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
                 <input type="date" name="date" id="date" value="{{ $date->format('Y-m-d') }}" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors bg-white text-gray-900" style="background-color: white !important; color: #111827 !important;">
             </div>
             <div class="flex items-end">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -152,6 +169,8 @@
                                 <div class="text-sm text-gray-900">
                                     @if($attendance && $attendance->time_in)
                                         {{ \Carbon\Carbon::parse($attendance->time_in)->format('g:i A') }}
+                                    @elseif($attendance && !$attendance->time_in)
+                                        <span class="text-gray-400">-</span>
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -161,6 +180,19 @@
                                 <div class="text-sm text-gray-900">
                                     @if($attendance && $attendance->time_out)
                                         {{ \Carbon\Carbon::parse($attendance->time_out)->format('g:i A') }}
+                                    @elseif($attendance && $attendance->time_in && !$attendance->time_out)
+                                        @php
+                                            $recordDate = \Carbon\Carbon::parse($attendance->date);
+                                            $isToday = $recordDate->isToday();
+                                        @endphp
+                                        @if($isToday)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 bg-blue-400 animate-pulse"></div>
+                                                Working
+                                            </span>
+                                        @else
+                                            <span class="text-gray-400">Not Clocked Out</span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -168,8 +200,22 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">
-                                    @if($attendance && $attendance->total_hours)
-                                        {{ \App\Helpers\TimezoneHelper::formatHours($attendance->total_hours) }}
+                                    @if($attendance && $attendance->time_in && $attendance->time_out)
+                                        @php
+                                            // Load breaks relationship if not already loaded
+                                            if (!$attendance->relationLoaded('breaks')) {
+                                                $attendance->load('breaks');
+                                            }
+                                            // Always calculate total hours to ensure accuracy
+                                            $calculatedHours = $attendance->calculateTotalHours();
+                                            // Always use calculated hours for display (more accurate)
+                                            $displayHours = $calculatedHours > 0 ? $calculatedHours : 0;
+                                        @endphp
+                                        @if($displayHours > 0)
+                                            {{ \App\Helpers\TimezoneHelper::formatHours($displayHours) }}
+                                        @else
+                                            <span class="text-gray-400">0h</span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -181,14 +227,20 @@
                                         $statusColors = [
                                             'present' => 'bg-green-100 text-green-800',
                                             'absent' => 'bg-red-100 text-red-800',
+                                            'absent_excused' => 'bg-yellow-100 text-yellow-800',
+                                            'absent_unexcused' => 'bg-red-100 text-red-800',
+                                            'absent_sick' => 'bg-orange-100 text-orange-800',
+                                            'absent_personal' => 'bg-purple-100 text-purple-800',
                                             'late' => 'bg-yellow-100 text-yellow-800',
-                                            'half_day' => 'bg-blue-100 text-blue-800'
+                                            'half_day' => 'bg-blue-100 text-blue-800',
+                                            'on_leave' => 'bg-indigo-100 text-indigo-800',
                                         ];
                                         $statusColor = $statusColors[$attendance->status] ?? 'bg-gray-100 text-gray-800';
+                                        $statusText = ucfirst(str_replace('_', ' ', $attendance->status));
                                     @endphp
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
                                         <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
-                                        {{ ucfirst(str_replace('_', ' ', $attendance->status)) }}
+                                        {{ $statusText }}
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -298,8 +350,22 @@
                             <div>
                                 <div class="text-gray-500">Total Hours</div>
                                 <div class="font-medium">
-                                    @if($attendance && $attendance->total_hours)
-                                        {{ \App\Helpers\TimezoneHelper::formatHours($attendance->total_hours) }}
+                                    @if($attendance && $attendance->time_in && $attendance->time_out)
+                                        @php
+                                            // Load breaks relationship if not already loaded
+                                            if (!$attendance->relationLoaded('breaks')) {
+                                                $attendance->load('breaks');
+                                            }
+                                            // Always calculate total hours to ensure accuracy
+                                            $calculatedHours = $attendance->calculateTotalHours();
+                                            // Always use calculated hours for display (more accurate)
+                                            $displayHours = $calculatedHours > 0 ? $calculatedHours : 0;
+                                        @endphp
+                                        @if($displayHours > 0)
+                                            {{ \App\Helpers\TimezoneHelper::formatHours($displayHours) }}
+                                        @else
+                                            <span class="text-gray-400">0h</span>
+                                        @endif
                                     @else
                                         <span class="text-gray-400">-</span>
                                     @endif
@@ -326,11 +392,113 @@
     </div>
 </div>
 
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<style>
+    /* Flatpickr Calendar Styling */
+    .flatpickr-calendar {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        font-family: inherit;
+    }
+    
+    .flatpickr-months {
+        background: #ffffff;
+        border-radius: 0.5rem 0.5rem 0 0;
+        padding: 0.5rem;
+    }
+    
+    .flatpickr-month {
+        color: #111827;
+    }
+    
+    .flatpickr-current-month {
+        color: #111827;
+        font-weight: 600;
+    }
+    
+    .flatpickr-weekdays {
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .flatpickr-weekday {
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+    
+    .flatpickr-day {
+        color: #111827;
+        border-radius: 0.375rem;
+    }
+    
+    .flatpickr-day:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+    
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
+    
+    .flatpickr-day.selected:hover,
+    .flatpickr-day.startRange:hover,
+    .flatpickr-day.endRange:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+    }
+    
+    .flatpickr-day.flatpickr-disabled,
+    .flatpickr-day.prevMonthDay,
+    .flatpickr-day.nextMonthDay {
+        color: #d1d5db;
+    }
+    
+    .flatpickr-day.today {
+        border-color: #2563eb;
+        font-weight: 600;
+    }
+    
+    .flatpickr-prev-month,
+    .flatpickr-next-month {
+        color: #6b7280;
+    }
+    
+    .flatpickr-prev-month:hover,
+    .flatpickr-next-month:hover {
+        color: #2563eb;
+    }
+</style>
+
 <script>
-function loadAttendanceData() {
-    const date = document.getElementById('date').value;
-    // This will be implemented when backend is ready
-    console.log('Loading attendance data for:', date);
-}
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Flatpickr for date input
+    const datePicker = flatpickr("#date", {
+        dateFormat: "Y-m-d",
+        defaultDate: "{{ $date->format('Y-m-d') }}",
+        onReady: function(selectedDates, dateStr, instance) {
+            // Ensure text is visible
+            instance.calendarContainer.style.color = '#111827';
+        }
+    });
+    
+    function loadAttendanceData() {
+        const date = document.getElementById('date').value;
+        // This will be implemented when backend is ready
+        console.log('Loading attendance data for:', date);
+    }
+});
 </script>
 @endsection

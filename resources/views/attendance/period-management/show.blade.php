@@ -64,6 +64,7 @@
                         @endif
                     </div>
                     <div class="flex space-x-3">
+                        @if($user->role !== 'employee')
                         <a href="{{ route('attendance.period-management.preview-payroll', $period->id) }}?refresh={{ time() }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-eye mr-2"></i>
                             Preview Payroll
@@ -76,6 +77,7 @@
                             <i class="fas fa-download mr-2"></i>
                             Export Payroll
                         </a>
+                        @endif
                         <a href="{{ route('attendance.period-management.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-arrow-left mr-2"></i>
                             Back to Periods
@@ -400,6 +402,7 @@
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">Payroll Preview</h3>
                     <div class="flex space-x-3">
+                        @if($user->role !== 'employee')
                         <a href="{{ route('attendance.period-management.payroll-summary', $period['id']) }}" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                             <i class="fas fa-eye mr-2"></i>
                             View Details
@@ -408,6 +411,7 @@
                             <i class="fas fa-download mr-2"></i>
                             Export CSV
                         </a>
+                        @endif
                     </div>
                 </div>
             </div>

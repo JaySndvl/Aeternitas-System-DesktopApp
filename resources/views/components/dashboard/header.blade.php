@@ -1,5 +1,15 @@
 @props(['title', 'user'])
 
+@php
+    // Check if employee is currently timed in (for employee role users)
+    $isCurrentlyTimedIn = false;
+    $todayAttendance = null;
+    if ($user->role === 'employee' && $user->employee) {
+        $todayAttendance = $user->employee->getTodayAttendance();
+        $isCurrentlyTimedIn = $todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out;
+    }
+@endphp
+
 <header class="bg-gradient-to-r from-white/95 to-blue-50/95 backdrop-blur-sm shadow-sm border-b border-gray-200 sticky top-0 z-40">
     <div class="flex items-center justify-between h-16 sm:h-20 px-3 sm:px-4 lg:px-8">
         <div class="flex items-center flex-1 min-w-0">
@@ -160,9 +170,9 @@
                     <div class="border-t border-gray-100 my-1"></div>
                     
                     <!-- Logout -->
-                    <form method="POST" action="{{ route('logout') }}" class="block">
+                    <form method="POST" action="{{ route('logout') }}" id="logout-form" class="block">
                         @csrf
-                        <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                        <button type="submit" onclick="handleLogout(event, {{ $isCurrentlyTimedIn ? 'true' : 'false' }})" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
                             <i class="fas fa-sign-out-alt w-4 h-4 mr-3"></i>
                             Logout
                         </button>
@@ -229,6 +239,159 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // The form will submit normally and page will reload
         return true;
+    };
+
+    // Logout handler - check if employee is timed in
+    window.handleLogout = function(event, isTimedIn) {
+        if (isTimedIn) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Show warning modal
+            showLogoutWarningModal();
+            return false;
+        }
+        // If not timed in, allow normal logout
+        return true;
+    };
+
+    // Show logout warning modal
+    function showLogoutWarningModal() {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'logout-warning-overlay';
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fadeIn';
+        overlay.style.animation = 'fadeIn 0.2s ease-out';
+        overlay.onclick = function(e) {
+            if (e.target === overlay) {
+                closeLogoutWarningModal();
+            }
+        };
+
+        // Create modal content
+        const modal = document.createElement('div');
+        modal.className = 'bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all';
+        modal.style.animation = 'slideUp 0.3s ease-out';
+        modal.innerHTML = `
+            <div class="p-6 sm:p-8">
+                <!-- Icon -->
+                <div class="flex items-center justify-center w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-full shadow-lg">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-3xl"></i>
+                </div>
+                
+                <!-- Title -->
+                <h3 class="text-2xl font-bold text-gray-900 text-center mb-3">Clock Out Required</h3>
+                
+                <!-- Message -->
+                <p class="text-gray-600 text-center mb-8 leading-relaxed text-sm sm:text-base">
+                    You are currently clocked in. Please clock out before logging out to ensure accurate time tracking.
+                </p>
+                
+                <!-- Buttons -->
+                <div class="space-y-3">
+                    <button onclick="clockOutAndLogout()" class="w-full flex items-center justify-center px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Clock Out & Logout
+                    </button>
+                    <button onclick="closeLogoutWarningModal()" class="w-full px-5 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-200">
+                        Cancel
+                    </button>
+                    <button onclick="logoutAnyway()" class="w-full flex items-center justify-center px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        Logout Anyway
+                    </button>
+                </div>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        // Add CSS animations if not already added
+        if (!document.getElementById('logout-modal-styles')) {
+            const style = document.createElement('style');
+            style.id = 'logout-modal-styles';
+            style.textContent = `
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { 
+                        opacity: 0;
+                        transform: translateY(20px) scale(0.95);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    // Close logout warning modal - make it global
+    window.closeLogoutWarningModal = function() {
+        const overlay = document.getElementById('logout-warning-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    };
+
+    // Clock out and then logout - make it global
+    window.clockOutAndLogout = async function() {
+        const overlay = document.getElementById('logout-warning-overlay');
+        if (overlay) {
+            const modal = overlay.querySelector('div');
+            if (modal) {
+                modal.innerHTML = `
+                    <div class="p-8">
+                        <div class="flex flex-col items-center justify-center">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Clocking Out...</h3>
+                            <p class="text-gray-600 text-center text-sm">Please wait while we process your clock out.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        try {
+            // Clock out first
+            const response = await fetch('{{ route("attendance.time-out") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Successfully clocked out, now logout
+                setTimeout(() => {
+                    document.getElementById('logout-form').submit();
+                }, 500);
+            } else {
+                // Clock out failed, show error but allow logout
+                alert('Failed to clock out: ' + (data.error || 'Unknown error') + '\n\nYou can still logout, but please contact HR to update your attendance record.');
+                document.getElementById('logout-form').submit();
+            }
+        } catch (error) {
+            console.error('Error clocking out:', error);
+            alert('Error clocking out. You can still logout, but please contact HR to update your attendance record.');
+            document.getElementById('logout-form').submit();
+        }
+    }
+
+    // Logout anyway (without clocking out) - make it global
+    window.logoutAnyway = function() {
+        window.closeLogoutWarningModal();
+        document.getElementById('logout-form').submit();
     };
 });
 </script>

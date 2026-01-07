@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 
@@ -30,6 +31,7 @@ class PayrollController extends Controller
 public function index(Request $request)
 {
     $currentCompany = CompanyHelper::getCurrentCompany();
+    $user = Auth::user();
     
     // Use window function to get the latest payroll per employee per period
     $latestPayrollsSubquery = DB::table('payrolls as p1')
@@ -62,6 +64,11 @@ public function index(Request $request)
     if ($currentCompany) {
         $query->where('employees.company_id', $currentCompany->id);
     }
+    
+    // Restrict to employee's own payrolls if user is an employee
+    if ($user && $user->role === 'employee' && $user->employee) {
+        $query->where('latest_payrolls.employee_id', $user->employee->id);
+    }
 
     // Date filtering - FIXED: Use table alias
     if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -74,8 +81,8 @@ public function index(Request $request)
         $query->where('latest_payrolls.status', $request->status);
     }
 
-    // Department filtering
-    if ($request->has('department_id') && $request->department_id != 'all') {
+    // Department filtering (only for admin/hr/manager)
+    if ($user && !in_array($user->role, ['employee']) && $request->has('department_id') && $request->department_id != 'all') {
         // Add department join first
         $query->leftJoin('departments', 'employees.department_id', '=', 'departments.id');
         $query->where('departments.id', $request->department_id);
@@ -84,8 +91,8 @@ public function index(Request $request)
         $query->leftJoin('departments', 'employees.department_id', '=', 'departments.id');
     }
 
-    // Employee filtering - FIXED: Use table alias
-    if ($request->has('employee_id') && $request->employee_id != 'all') {
+    // Employee filtering - FIXED: Use table alias (only for admin/hr/manager)
+    if ($user && !in_array($user->role, ['employee']) && $request->has('employee_id') && $request->employee_id != 'all') {
         $query->where('latest_payrolls.employee_id', $request->employee_id);
     }
 
@@ -162,10 +169,14 @@ public function index(Request $request)
         return $payroll;
     });
     
-    // Get employees for filters
+    // Get employees for filters (restricted for employees)
     $employeesQuery = Employee::query();
     if ($currentCompany) {
         $employeesQuery->forCompany($currentCompany->id);
+    }
+    // Restrict to employee's own record if user is an employee
+    if ($user && $user->role === 'employee' && $user->employee) {
+        $employeesQuery->where('id', $user->employee->id);
     }
     $employees = $employeesQuery->get();
     
@@ -976,10 +987,17 @@ public function processPayments(Request $request)
 public function exportPayroll(Request $request)
 {
     try {
+        $user = Auth::user();
+        
+        // Authorization check: Only admin/hr/manager can export payroll
+        if ($user && $user->role === 'employee') {
+            return redirect()->back()->with('error', 'You are not authorized to export payroll.');
+        }
+        
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
-            'format' => 'nullable|in:csv,xlsx',
+            'format' => 'required|in:csv,xlsx,pdf',
         ]);
 
         $period = $request->only(['start_date', 'end_date']);
@@ -992,7 +1010,12 @@ public function exportPayroll(Request $request)
             'format' => $format
         ]);
 
-        // Use the service method
+        // Handle PDF export separately
+        if ($format === 'pdf') {
+            return $this->exportPayrollToPDF($request);
+        }
+
+        // Use the service method for CSV/Excel
         $filename = $this->payrollService->exportPayrollToExcel($period, $employeeIds, $format);
 
         // Get the full path
@@ -1019,6 +1042,186 @@ public function exportPayroll(Request $request)
             ->with('error', 'Error exporting payroll: ' . $e->getMessage())
             ->with('start_date', $request->input('start_date'))
             ->with('end_date', $request->input('end_date'));
+    }
+}
+
+/**
+ * Export payroll to PDF
+ */
+private function exportPayrollToPDF(Request $request)
+{
+    try {
+        $currentCompany = CompanyHelper::getCurrentCompany();
+        
+        // Use window function to get latest payroll per employee per period (same as index page)
+        $latestPayrollsSubquery = DB::table('payrolls as p1')
+            ->select(
+                'p1.id',
+                'p1.employee_id',
+                'p1.pay_period_start',
+                'p1.pay_period_end',
+                DB::raw('ROW_NUMBER() OVER (PARTITION BY p1.employee_id, p1.pay_period_start, p1.pay_period_end ORDER BY p1.created_at DESC) as rn')
+            );
+        
+        // Build date filter for subquery
+        if ($request->start_date && $request->end_date) {
+            $latestPayrollsSubquery->where(function($q) use ($request) {
+                $q->where(function($subQ) use ($request) {
+                    $subQ->whereBetween('p1.pay_period_start', [$request->start_date, $request->end_date]);
+                })->orWhere(function($subQ) use ($request) {
+                    $subQ->whereBetween('p1.pay_period_end', [$request->start_date, $request->end_date]);
+                })->orWhere(function($subQ) use ($request) {
+                    $subQ->where('p1.pay_period_start', '<=', $request->start_date)
+                         ->where('p1.pay_period_end', '>=', $request->end_date);
+                })->orWhere(function($subQ) use ($request) {
+                    $subQ->where('p1.pay_period_start', $request->start_date)
+                         ->where('p1.pay_period_end', $request->end_date);
+                });
+            });
+        } elseif ($request->start_date) {
+            $latestPayrollsSubquery->where('p1.pay_period_start', '>=', $request->start_date);
+        } elseif ($request->end_date) {
+            $latestPayrollsSubquery->where('p1.pay_period_end', '<=', $request->end_date);
+        }
+        
+        // Filter by employee if specified
+        if ($request->filled('employee_ids') && is_array($request->employee_ids)) {
+            $latestPayrollsSubquery->whereIn('p1.employee_id', $request->employee_ids);
+        }
+        
+        // Get only the latest payroll per employee per period
+        $latestPayrollsQuery = DB::table(DB::raw("({$latestPayrollsSubquery->toSql()}) as latest_payrolls"))
+            ->mergeBindings($latestPayrollsSubquery)
+            ->where('latest_payrolls.rn', 1)
+            ->select('latest_payrolls.id');
+        
+        $latestPayrollIds = $latestPayrollsQuery->pluck('id')->toArray();
+        
+        // Now get the full payroll records with relationships
+        $query = Payroll::with(['employee', 'employee.department'])
+            ->whereIn('id', $latestPayrollIds);
+        
+        // Filter by company
+        if ($currentCompany) {
+            $query->whereHas('employee', function($q) use ($currentCompany) {
+                $q->where('company_id', $currentCompany->id);
+            });
+        }
+        
+        $payrolls = $query->orderBy('employee_id')->get();
+        
+        if ($payrolls->isEmpty()) {
+            throw new \Exception('No payroll records found for the selected period.');
+        }
+        
+        // Recalculate payrolls with zero values before export
+        $payrollIds = $payrolls->pluck('id')->toArray();
+        foreach ($payrolls as $payroll) {
+            if (($payroll->basic_salary == 0 && $payroll->gross_pay == 0) && $payroll->employee) {
+                $this->recalculatePayrollValues($payroll);
+            }
+        }
+        
+        // Refresh payrolls to get updated values
+        $payrolls = Payroll::with(['employee', 'employee.department'])
+            ->whereIn('id', $payrollIds)
+            ->orderBy('employee_id')
+            ->get();
+        
+        // Check if DomPDF is available
+        if (!class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+            throw new \Exception('PDF generation library not available.');
+        }
+        
+        // Generate PDF HTML
+        $html = view('payroll.export-pdf', [
+            'payrolls' => $payrolls,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'company' => $currentCompany
+        ])->render();
+        
+        // Generate PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+        $pdf->setPaper('a4', 'landscape');
+        
+        $filename = 'payroll_export_' . $request->start_date . '_to_' . $request->end_date . '.pdf';
+        
+        return $pdf->download($filename);
+        
+    } catch (\Exception $e) {
+        Log::error('Error exporting payroll to PDF: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+    /**
+     * Recalculate payroll values from employee data
+     */
+    private function recalculatePayrollValues(Payroll $payroll)
+    {
+        $employee = $payroll->employee;
+        if (!$employee) {
+            return;
+        }
+        
+        // Get rates from payroll or employee
+        $monthlyRate = $payroll->monthly_rate ?? $employee->salary ?? 0;
+        $semiMonthlyRate = $payroll->semi_monthly_rate ?? ($monthlyRate / 2);
+        $dailyRate = $payroll->daily_rate ?? $employee->daily_rate ?? ($monthlyRate * 12 / 313);
+        $hourlyRate = $payroll->hourly_rate ?? $employee->hourly_rate ?? ($dailyRate / 8);
+        
+        // Calculate basic salary - use semi-monthly rate if available
+        $basicSalary = $payroll->basic_salary;
+        if ($basicSalary == 0) {
+            if ($semiMonthlyRate > 0) {
+                $basicSalary = $semiMonthlyRate;
+            } elseif ($monthlyRate > 0) {
+                $basicSalary = $monthlyRate / 2;
+            } elseif ($dailyRate > 0) {
+                // Calculate based on pay period days
+                $startDate = \Carbon\Carbon::parse($payroll->pay_period_start);
+                $endDate = \Carbon\Carbon::parse($payroll->pay_period_end);
+                $daysInPeriod = $startDate->diffInDays($endDate) + 1;
+                $basicSalary = $dailyRate * min($daysInPeriod, 15); // Semi-monthly typically 15 days
+            }
+        }
+        
+        // Calculate overtime pay
+        $overtimeRate = $payroll->overtime_rate ?? ($hourlyRate * 1.25);
+        $overtimePay = $payroll->overtime_pay;
+        if ($overtimePay == 0 && ($payroll->overtime_hours ?? 0) > 0) {
+            $overtimePay = ($payroll->overtime_hours ?? 0) * $overtimeRate;
+        }
+        
+        // Get other components
+        $nightDiffPay = $payroll->night_differential_pay ?? 0;
+        $restDayPremium = $payroll->rest_day_premium_pay ?? 0;
+        $allowances = $payroll->allowances ?? 0;
+        $bonuses = $payroll->bonuses ?? 0;
+        $deductions = $payroll->deductions ?? 0;
+        $taxAmount = $payroll->tax_amount ?? 0;
+        
+        // Calculate gross pay
+        $grossPay = $basicSalary + $overtimePay + $nightDiffPay + 
+                   $restDayPremium + $allowances + $bonuses;
+        
+        // Calculate net pay
+        $netPay = $grossPay - $deductions - $taxAmount;
+        
+        // Update payroll if values changed
+        if ($basicSalary > 0 || $grossPay > 0) {
+            $payroll->update([
+                'basic_salary' => $basicSalary,
+                'gross_pay' => $grossPay,
+                'net_pay' => $netPay,
+                'overtime_pay' => $overtimePay,
+                'monthly_rate' => $monthlyRate,
+                'semi_monthly_rate' => $semiMonthlyRate,
+                'daily_rate' => $dailyRate,
+                'hourly_rate' => $hourlyRate,
+                'overtime_rate' => $overtimeRate,
+            ]);
     }
 }
 
@@ -1256,6 +1459,13 @@ public function exportPayroll(Request $request)
 public function downloadAllPayslips(Request $request)
 {
     try {
+        $user = Auth::user();
+        
+        // Authorization check: Only admin/hr/manager can download all payslips
+        if ($user && $user->role === 'employee') {
+            return redirect()->back()->with('error', 'You are not authorized to download all payslips.');
+        }
+        
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date'
@@ -1338,6 +1548,13 @@ public function downloadAllPayslips(Request $request)
 public function exportDetailed(Request $request)
 {
     try {
+        $user = Auth::user();
+        
+        // Authorization check: Only admin/hr/manager can export detailed payroll
+        if ($user && $user->role === 'employee') {
+            return redirect()->back()->with('error', 'You are not authorized to export detailed payroll.');
+        }
+        
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date',
@@ -1545,6 +1762,13 @@ public function markAsPaid(Request $request)
 public function generatePayslips(Request $request)
 {
     try {
+        $user = Auth::user();
+        
+        // Authorization check: Only admin/hr/manager can generate payslips
+        if ($user && $user->role === 'employee') {
+            return redirect()->back()->with('error', 'You are not authorized to generate payslips.');
+        }
+        
         $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
@@ -1666,6 +1890,14 @@ public function downloadPayslip($payrollId)
 {
     try {
         $payroll = Payroll::findOrFail($payrollId);
+        $user = Auth::user();
+        
+        // Authorization check: Employees can only download their own payslips
+        if ($user && $user->role === 'employee' && $user->employee) {
+            if ($payroll->employee_id !== $user->employee->id) {
+                return redirect()->back()->with('error', 'You are not authorized to download this payslip.');
+            }
+        }
         
         // Generate or get payslip
         if (!$payroll->payslip_file) {
