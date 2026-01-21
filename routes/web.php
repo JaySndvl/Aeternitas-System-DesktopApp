@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\PayrollController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\DocumentController;
 
 
 /*
@@ -83,7 +84,33 @@ Route::middleware(['auth', 'require.timein'])->group(function () {
     Route::post('/payrolls/approve-selected', [PayrollController::class, 'approveSelected'])->name('payrolls.approve-selected');
     Route::post('/payrolls/process-selected-payments', [PayrollController::class, 'processSelectedPayments'])->name('payrolls.process-selected-payments');
     Route::post('/payrolls/export-detailed', [PayrollController::class, 'exportDetailed'])->name('payrolls.export-detailed');
+    Route::post('/payrolls/mark-as-paid', [PayrollController::class, 'markAsPaid'])
+    ->name('payrolls.mark-as-paid')
+    ->middleware('auth');
+    Route::post('/payrolls/export-with-calculations', [PayrollController::class, 'exportWithCalculations'])
+    ->name('payrolls.export-with-calculations');
+    Route::post('/payrolls/export-with-calculations', [PayrollController::class, 'exportWithCalculations'])->name('payrolls.export-with-calculations');
+    Route::post('/payrolls/export-with-calculations', [PayrollController::class, 'exportWithCalculations'])
+    ->name('payrolls.export-with-calculations')
+    ->middleware('auth');
+    Route::post('/payrolls/simple-export', [PayrollController::class, 'simpleExport'])->name('payrolls.simple-export');
 
+Route::post('/payrolls/generate-payslips', [PayrollController::class, 'generatePayslips'])
+    ->name('payrolls.generate-payslips')
+    ->middleware('auth');
+
+Route::get('/payrolls/download-all-payslips', [PayrollController::class, 'downloadAllPayslips'])
+    ->name('payrolls.download-all-payslips')
+    ->middleware('auth');
+
+Route::post('/payrolls/mark-as-paid', [PayrollController::class, 'markAsPaid'])
+    ->name('payrolls.mark-as-paid')
+    ->middleware('auth');
+Route::get('/debug-payroll-match', [PayrollController::class, 'debugPayrollMatching']);
+
+Route::post('/payroll/{payroll}/approve', [PayrollController::class, 'approvePayroll'])->name('payroll.approve');
+Route::post('/payroll/{payroll}/reject', [PayrollController::class, 'rejectPayroll'])->name('payroll.reject');
+Route::get('/payroll/{payroll}/download-payslip', [PayrollController::class, 'downloadViewPayslip'])->name('payroll.download-payslip');
 
 
     // Payroll route aliases for consistency
@@ -110,6 +137,60 @@ Route::middleware(['auth', 'require.timein'])->group(function () {
             'payrolls' => $payrolls->toArray()
         ];
     });
+
+    // Add this to routes/web.php
+Route::get('/debug-payroll-dates', function() {
+    $payrolls = \App\Models\Payroll::select('id', 'employee_id', 'pay_period_start', 'pay_period_end', 'status', 'created_at')
+        ->orderBy('pay_period_start', 'desc')
+        ->limit(20)
+        ->get();
+    
+    return response()->json([
+        'total_payrolls' => \App\Models\Payroll::count(),
+        'pending_count' => \App\Models\Payroll::where('status', 'pending')->count(),
+        'approved_count' => \App\Models\Payroll::where('status', 'approved')->count(),
+        'recent_payrolls' => $payrolls,
+        'unique_periods' => \App\Models\Payroll::select('pay_period_start', 'pay_period_end')
+            ->distinct()
+            ->orderBy('pay_period_start', 'desc')
+            ->get()
+    ]);
+});
+
+// In routes/web.php
+Route::get('/debug-current-payrolls', function() {
+    $allPayrolls = \App\Models\Payroll::select(
+        'id', 
+        'employee_id', 
+        'pay_period_start', 
+        'pay_period_end', 
+        'status',
+        'created_at'
+    )
+    ->with(['employee:id,employee_id,first_name,last_name'])
+    ->orderBy('pay_period_start', 'desc')
+    ->limit(50)
+    ->get();
+    
+    $uniquePeriods = \App\Models\Payroll::select('pay_period_start', 'pay_period_end')
+        ->selectRaw('COUNT(*) as count')
+        ->groupBy('pay_period_start', 'pay_period_end')
+        ->orderBy('pay_period_start', 'desc')
+        ->get();
+    
+    return response()->json([
+        'total_payrolls' => \App\Models\Payroll::count(),
+        'status_counts' => [
+            'pending' => \App\Models\Payroll::where('status', 'pending')->count(),
+            'approved' => \App\Models\Payroll::where('status', 'approved')->count(),
+            'paid' => \App\Models\Payroll::where('status', 'paid')->count(),
+        ],
+        'recent_payrolls' => $allPayrolls,
+        'unique_periods' => $uniquePeriods,
+        'database_date_format' => 'Check if dates are YYYY-MM-DD or include time'
+    ]);
+});
+    
     
     // Schedule Management V2 routes
     Route::prefix('schedule-v2')->name('schedule-v2.')->group(function () {
@@ -246,4 +327,22 @@ Route::middleware(['auth', 'require.timein'])->group(function () {
     Route::resource('tax-brackets', App\Http\Controllers\Web\TaxBracketController::class);
     Route::post('/tax-brackets/calculate', [App\Http\Controllers\Web\TaxBracketController::class, 'calculateTax'])->name('tax-brackets.calculate');
     Route::post('/tax-brackets/philippine', [App\Http\Controllers\Web\TaxBracketController::class, 'createPhilippineBrackets'])->name('tax-brackets.philippine');
+
+    // Add these routes to your web.php file
+
+    // Document Management routes
+    Route::middleware(['auth'])->group(function () {
+    // Documents routes
+    Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::post('/documents/switch-company', [DocumentController::class, 'switchCompany'])->name('documents.switch-company');
+    Route::get('/documents/export', [DocumentController::class, 'export'])->name('documents.export');
+    Route::get('/documents/employee/{id}/export', [DocumentController::class, 'exportEmployee'])->name('documents.employee.export');
+    
+    // Employee details for modal
+    Route::get('/employees/{id}/details', [DocumentController::class, 'getEmployeeDetails']);
+    
+    // Employee documents page
+    Route::get('/employees/{id}/documents', [EmployeeController::class, 'documents'])->name('employees.documents');
+});
+    
 });

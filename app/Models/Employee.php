@@ -268,4 +268,10 @@ class Employee extends Model
     {
         return $this->account()->exists();
     }
+
+        public function documents()
+    {
+        return $this->hasMany(Document::class);
+    }
+
 }

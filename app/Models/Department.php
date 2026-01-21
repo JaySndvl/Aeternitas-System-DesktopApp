@@ -69,4 +69,6 @@ class Department extends Model
     {
         return $query->where('company_id', $companyId);
     }
+
+    
 }

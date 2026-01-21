@@ -1,92 +1,223 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payroll Export - {{ $start_date }} to {{ $end_date }}</title>
     <style>
+        /* Base styles with improved PDF compatibility */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'DejaVu Sans', 'Arial Unicode MS', Arial, sans-serif;
             font-size: 10px;
+            line-height: 1.4;
             margin: 0;
-            padding: 10px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 18px;
+            padding: 15px;
             color: #333;
         }
-        .header p {
-            margin: 5px 0;
+        
+        /* Header Section */
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4a5568;
+        }
+        
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+            color: #2d3748;
+        }
+        
+        .report-title {
+            font-size: 16px;
+            margin: 0 0 15px 0;
+            color: #4a5568;
+        }
+        
+        .period-info {
             font-size: 12px;
+            font-weight: bold;
+            margin: 5px 0;
             color: #666;
         }
+        
+        .generated-date {
+            font-size: 10px;
+            color: #718096;
+            margin: 5px 0;
+        }
+        
+        /* Table Styles */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin: 15px 0 25px 0;
         }
+        
         th {
             background-color: #4a5568;
             color: white;
-            padding: 8px 4px;
+            padding: 8px 6px;
             text-align: left;
             font-size: 9px;
+            font-weight: bold;
             border: 1px solid #2d3748;
         }
+        
         td {
-            padding: 6px 4px;
-            border: 1px solid #ddd;
+            padding: 6px 6px;
+            border: 1px solid #e2e8f0;
             font-size: 9px;
+            vertical-align: top;
         }
+        
         tr:nth-child(even) {
             background-color: #f7fafc;
         }
+        
+        /* Text Alignment */
         .text-right {
             text-align: right;
         }
+        
         .text-center {
             text-align: center;
         }
-        .summary {
-            margin-top: 20px;
-            padding: 10px;
+        
+        .text-left {
+            text-align: left;
+        }
+        
+        /* Currency formatting */
+        .currency {
+            font-family: 'DejaVu Sans', monospace;
+        }
+        
+        /* Status Styles */
+        .status-pending { color: #d69e2e; font-weight: bold; }
+        .status-approved { color: #38a169; font-weight: bold; }
+        .status-paid { color: #3182ce; font-weight: bold; }
+        .status-cancelled { color: #e53e3e; font-weight: bold; }
+        
+        /* Totals Row */
+        tfoot tr {
+            background-color: #e2e8f0;
+            font-weight: bold;
+        }
+        
+        tfoot td {
+            border-top: 2px solid #4a5568;
+            border-bottom: 2px solid #4a5568;
+        }
+        
+        /* Summary Section */
+        .summary-section {
+            margin-top: 30px;
+            padding: 15px;
             background-color: #edf2f7;
             border: 1px solid #cbd5e0;
+            border-radius: 4px;
         }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
+        
+        .summary-title {
+            font-size: 14px;
             font-weight: bold;
+            margin: 0 0 15px 0;
+            color: #2d3748;
+            border-bottom: 1px solid #cbd5e0;
+            padding-bottom: 5px;
+        }
+        
+        .summary-table {
+            width: 100%;
+            max-width: 400px;
+            margin: 0;
+        }
+        
+        .summary-table td {
+            border: none;
+            padding: 8px 0;
+            background-color: transparent;
+        }
+        
+        .summary-table tr:last-child td {
+            border-top: 1px solid #cbd5e0;
+            padding-top: 12px;
+            font-weight: bold;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 9px;
+            color: #718096;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        /* Page break for printing */
+        @media print {
+            .page-break {
+                page-break-before: always;
+            }
+            
+            body {
+                padding: 0;
+            }
+            
+            table {
+                page-break-inside: auto;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            
+            thead {
+                display: table-header-group;
+            }
+            
+            tfoot {
+                display: table-footer-group;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
-        <h1>{{ $company->name ?? 'Company' }} - Payroll Report</h1>
-        <p>Period: {{ \Carbon\Carbon::parse($start_date)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($end_date)->format('M d, Y') }}</p>
-        <p>Generated: {{ now()->format('M d, Y h:i A') }}</p>
+        <div class="company-info">
+            <h1 class="company-name">{{ $company->name ?? 'Aeternitas Company' }}</h1>
+            <h2 class="report-title">Payroll Report</h2>
+        </div>
+        
+        <div class="period-info">
+            Period: {{ \Carbon\Carbon::parse($start_date)->format('F j, Y') }} to {{ \Carbon\Carbon::parse($end_date)->format('F j, Y') }}
+        </div>
+        
+        <div class="generated-date">
+            Generated: {{ now()->format('F j, Y h:i A') }}
+        </div>
     </div>
 
+    <!-- Payroll Table -->
     <table>
         <thead>
             <tr>
                 <th>Employee ID</th>
                 <th>Employee Name</th>
                 <th>Department</th>
-                <th>Basic Salary</th>
-                <th>Overtime</th>
-                <th>Allowances</th>
-                <th>Deductions</th>
-                <th>Gross Pay</th>
-                <th>Net Pay</th>
-                <th>Status</th>
+                <th class="text-right">Basic Salary</th>
+                <th class="text-right">Overtime</th>
+                <th class="text-right">Allowances</th>
+                <th class="text-right">Deductions</th>
+                <th class="text-right">Gross Pay</th>
+                <th class="text-right">Net Pay</th>
+                <th class="text-center">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -97,7 +228,9 @@
                 $totalDeductions = 0;
                 $totalGrossPay = 0;
                 $totalNetPay = 0;
+                $totalEmployees = $payrolls->count();
             @endphp
+            
             @foreach($payrolls as $payroll)
                 @php
                     $employee = $payroll->employee;
@@ -161,46 +294,72 @@
                 @endphp
                 <tr>
                     <td>{{ $employee->employee_id ?? 'N/A' }}</td>
-                    <td>{{ $employee->full_name ?? 'N/A' }}</td>
+                    <td>{{ $employee->full_name ?? 'Unknown Employee' }}</td>
                     <td>{{ $employee->department->name ?? 'N/A' }}</td>
-                    <td class="text-right">₱{{ number_format($basicSalary, 2) }}</td>
-                    <td class="text-right">₱{{ number_format($overtimePay, 2) }}</td>
-                    <td class="text-right">₱{{ number_format($allowances, 2) }}</td>
-                    <td class="text-right">₱{{ number_format($deductions, 2) }}</td>
-                    <td class="text-right">₱{{ number_format($grossPay, 2) }}</td>
-                    <td class="text-right">₱{{ number_format($netPay, 2) }}</td>
-                    <td class="text-center">{{ ucfirst($payroll->status) }}</td>
+                    <td class="text-right currency">₱{{ number_format($basicSalary, 2) }}</td>
+                    <td class="text-right currency">₱{{ number_format($overtimePay, 2) }}</td>
+                    <td class="text-right currency">₱{{ number_format($allowances, 2) }}</td>
+                    <td class="text-right currency">₱{{ number_format($deductions, 2) }}</td>
+                    <td class="text-right currency">₱{{ number_format($grossPay, 2) }}</td>
+                    <td class="text-right currency">₱{{ number_format($netPay, 2) }}</td>
+                    <td class="text-center status-{{ $payroll->status }}">{{ ucfirst($payroll->status) }}</td>
                 </tr>
             @endforeach
         </tbody>
         <tfoot>
-            <tr style="background-color: #e2e8f0; font-weight: bold;">
-                <td colspan="3" class="text-right">TOTAL:</td>
-                <td class="text-right">₱{{ number_format($totalBasicSalary, 2) }}</td>
-                <td class="text-right">₱{{ number_format($totalOvertime, 2) }}</td>
-                <td class="text-right">₱{{ number_format($totalAllowances, 2) }}</td>
-                <td class="text-right">₱{{ number_format($totalDeductions, 2) }}</td>
-                <td class="text-right">₱{{ number_format($totalGrossPay, 2) }}</td>
-                <td class="text-right">₱{{ number_format($totalNetPay, 2) }}</td>
+            <tr>
+                <td colspan="3" class="text-right"><strong>TOTALS:</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalBasicSalary, 2) }}</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalOvertime, 2) }}</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalAllowances, 2) }}</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalDeductions, 2) }}</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalGrossPay, 2) }}</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalNetPay, 2) }}</strong></td>
                 <td></td>
             </tr>
         </tfoot>
     </table>
 
-    <div class="summary">
-        <div class="summary-row">
-            <span>Total Employees:</span>
-            <span>{{ $payrolls->count() }}</span>
-        </div>
-        <div class="summary-row">
-            <span>Total Gross Pay:</span>
-            <span>₱{{ number_format($totalGrossPay, 2) }}</span>
-        </div>
-        <div class="summary-row">
-            <span>Total Net Pay:</span>
-            <span>₱{{ number_format($totalNetPay, 2) }}</span>
-        </div>
+    <!-- Summary Section -->
+    <div class="summary-section">
+        <h3 class="summary-title">Payroll Summary</h3>
+        <table class="summary-table">
+            <tr>
+                <td>Total Employees:</td>
+                <td class="text-right">{{ $totalEmployees }}</td>
+            </tr>
+            <tr>
+                <td>Total Basic Salary:</td>
+                <td class="text-right currency">₱{{ number_format($totalBasicSalary, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Total Overtime Pay:</td>
+                <td class="text-right currency">₱{{ number_format($totalOvertime, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Total Allowances:</td>
+                <td class="text-right currency">₱{{ number_format($totalAllowances, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Total Deductions:</td>
+                <td class="text-right currency">₱{{ number_format($totalDeductions, 2) }}</td>
+            </tr>
+            <tr>
+                <td><strong>Total Gross Pay:</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalGrossPay, 2) }}</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Total Net Pay:</strong></td>
+                <td class="text-right currency"><strong>₱{{ number_format($totalNetPay, 2) }}</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Generated by Aeternitas Payroll System</p>
+        <p>This is an official payroll document. Unauthorized distribution is prohibited.</p>
+        <p>Page 1 of 1</p>
     </div>
 </body>
 </html>
-

@@ -1,8 +1,6 @@
-@extends('layouts.dashboard-base', ['user' => auth()->user(), 'activeRoute' => 'payroll.index'])
+<?php $__env->startSection('title', 'Payroll Management'); ?>
 
-@section('title', 'Payroll Management')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -11,8 +9,8 @@
             <p class="mt-1 text-sm text-gray-600">Manage employee salaries, deductions, and payments</p>
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
-        <form action="{{ route('payrolls.generate') }}" method="POST" class="inline" id="generatePayrollForm">
-            @csrf
+        <form action="<?php echo e(route('payrolls.generate')); ?>" method="POST" class="inline" id="generatePayrollForm">
+            <?php echo csrf_field(); ?>
             <input type="hidden" name="start_date" id="generateStartDate" value="">
             <input type="hidden" name="end_date" id="generateEndDate" value="">
             <button type="button" onclick="generatePayroll()" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
@@ -24,32 +22,35 @@
     </div>
 
     <!-- Flash Messages -->
-@if(session('success'))
+<?php if(session('success')): ?>
 <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
     <div class="flex items-center">
         <i class="fas fa-check-circle mr-2"></i>
-        {{ session('success') }}
+        <?php echo e(session('success')); ?>
+
     </div>
 </div>
-@endif
+<?php endif; ?>
 
-@if(session('error'))
+<?php if(session('error')): ?>
 <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
     <div class="flex items-center">
         <i class="fas fa-exclamation-circle mr-2"></i>
-        {{ session('error') }}
+        <?php echo e(session('error')); ?>
+
     </div>
 </div>
-@endif
+<?php endif; ?>
 
-@if(session('info'))
+<?php if(session('info')): ?>
 <div class="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
     <div class="flex items-center">
         <i class="fas fa-info-circle mr-2"></i>
-        {{ session('info') }}
+        <?php echo e(session('info')); ?>
+
     </div>
 </div>
-@endif
+<?php endif; ?>
 
     <!-- Payroll Period Selector -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
@@ -66,7 +67,7 @@
                         <button onclick="toggleCalendar()" 
                                 id="dateRangeButton" 
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-left flex items-center justify-between">
-                            <span id="dateRangeText">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
+                            <span id="dateRangeText"><?php echo e(date('M d, Y')); ?> - <?php echo e(date('M d, Y')); ?></span>
                             <i class="fas fa-calendar-alt text-gray-400"></i>
                         </button>
                         
@@ -140,18 +141,19 @@
         </div>
         
         <!-- Additional Filters Form -->
-        <form method="GET" action="{{ route('payroll.index') }}" class="mt-6 pt-6 border-t border-gray-200">
+        <form method="GET" action="<?php echo e(route('payroll.index')); ?>" class="mt-6 pt-6 border-t border-gray-200">
             <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <!-- Department Filter -->
                 <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
                     <select name="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Departments</option>
-                        @foreach($departments as $department)
-                            <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
-                                {{ $department->name }}
+                        <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $department): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($department->id); ?>" <?php echo e(request('department_id') == $department->id ? 'selected' : ''); ?>>
+                                <?php echo e($department->name); ?>
+
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
                 
@@ -160,9 +162,9 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Status</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                        <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
+                        <option value="pending" <?php echo e(request('status') == 'pending' ? 'selected' : ''); ?>>Pending</option>
+                        <option value="approved" <?php echo e(request('status') == 'approved' ? 'selected' : ''); ?>>Approved</option>
+                        <option value="paid" <?php echo e(request('status') == 'paid' ? 'selected' : ''); ?>>Paid</option>
                     </select>
                 </div>
                 
@@ -171,11 +173,12 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
                     <select name="employee_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">All Employees</option>
-                        @foreach($employees as $employee)
-                            <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
-                                {{ $employee->full_name }}
+                        <?php $__currentLoopData = $employees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $employee): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($employee->id); ?>" <?php echo e(request('employee_id') == $employee->id ? 'selected' : ''); ?>>
+                                <?php echo e($employee->full_name); ?>
+
                             </option>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                 </div>
                 
@@ -184,15 +187,15 @@
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fas fa-filter mr-2"></i>Apply Filters
                     </button>
-                    <a href="{{ route('payroll.index') }}" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <a href="<?php echo e(route('payroll.index')); ?>" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                         <i class="fas fa-times mr-2"></i>Clear
                     </a>
                 </div>
             </div>
             
             <!-- Date Range Inputs (hidden - populated by calendar) -->
-            <input type="hidden" name="start_date" id="filterStartDate" value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}">
-            <input type="hidden" name="end_date" id="filterEndDate" value="{{ request('end_date', now()->endOfMonth()->format('Y-m-d')) }}">
+            <input type="hidden" name="start_date" id="filterStartDate" value="<?php echo e(request('start_date', now()->startOfMonth()->format('Y-m-d'))); ?>">
+            <input type="hidden" name="end_date" id="filterEndDate" value="<?php echo e(request('end_date', now()->endOfMonth()->format('Y-m-d'))); ?>">
         </form>
         
         <!-- Selected Period Display -->
@@ -200,31 +203,34 @@
             <div class="flex items-center">
                 <i class="fas fa-calendar-check text-blue-600 mr-2"></i>
                 <span class="text-sm font-medium text-blue-800">
-                    Selected Period: <span id="periodDisplay">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
+                    Selected Period: <span id="periodDisplay"><?php echo e(date('M d, Y')); ?> - <?php echo e(date('M d, Y')); ?></span>
                 </span>
             </div>
-            @if(request()->anyFilled(['department_id', 'status', 'employee_id']))
+            <?php if(request()->anyFilled(['department_id', 'status', 'employee_id'])): ?>
             <div class="mt-2 flex flex-wrap gap-2">
-                @if(request('department_id'))
+                <?php if(request('department_id')): ?>
                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     <i class="fas fa-building mr-1"></i>
-                    Department: {{ $departments->where('id', request('department_id'))->first()->name ?? 'N/A' }}
+                    Department: <?php echo e($departments->where('id', request('department_id'))->first()->name ?? 'N/A'); ?>
+
                 </span>
-                @endif
-                @if(request('status'))
+                <?php endif; ?>
+                <?php if(request('status')): ?>
                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     <i class="fas fa-check-circle mr-1"></i>
-                    Status: {{ ucfirst(request('status')) }}
+                    Status: <?php echo e(ucfirst(request('status'))); ?>
+
                 </span>
-                @endif
-                @if(request('employee_id'))
+                <?php endif; ?>
+                <?php if(request('employee_id')): ?>
                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                     <i class="fas fa-user mr-1"></i>
-                    Employee: {{ $employees->where('id', request('employee_id'))->first()->full_name ?? 'N/A' }}
+                    Employee: <?php echo e($employees->where('id', request('employee_id'))->first()->full_name ?? 'N/A'); ?>
+
                 </span>
-                @endif
+                <?php endif; ?>
             </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
@@ -239,7 +245,7 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-gray-500">Total Employees</p>
-                    <p class="text-lg font-semibold text-gray-900">{{ number_format($summary['total_employees']) }}</p>
+                    <p class="text-lg font-semibold text-gray-900"><?php echo e(number_format($summary['total_employees'])); ?></p>
                 </div>
             </div>
         </div>
@@ -253,7 +259,7 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-gray-500">Gross Pay</p>
-                    <p class="text-lg font-semibold text-gray-900">₱{{ number_format($summary['gross_pay'], 2) }}</p>
+                    <p class="text-lg font-semibold text-gray-900">₱<?php echo e(number_format($summary['gross_pay'], 2)); ?></p>
                 </div>
             </div>
         </div>
@@ -267,7 +273,7 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-gray-500">Total Deductions</p>
-                    <p class="text-lg font-semibold text-gray-900">₱{{ number_format($summary['total_deductions'], 2) }}</p>
+                    <p class="text-lg font-semibold text-gray-900">₱<?php echo e(number_format($summary['total_deductions'], 2)); ?></p>
                 </div>
             </div>
         </div>
@@ -281,14 +287,14 @@
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-gray-500">Net Pay</p>
-                    <p class="text-lg font-semibold text-gray-900">₱{{ number_format($summary['net_pay'], 2) }}</p>
+                    <p class="text-lg font-semibold text-gray-900">₱<?php echo e(number_format($summary['net_pay'], 2)); ?></p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Employee Rate Information -->
-    @if($employees->count() > 0)
+    <?php if($employees->count() > 0): ?>
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900">
@@ -297,43 +303,43 @@
             </h3>
             <div class="flex items-center space-x-2">
                 <span id="employeePaginationInfo" class="text-sm text-gray-500">
-                    Showing 1-6 of {{ $employees->count() }} employees
+                    Showing 1-6 of <?php echo e($employees->count()); ?> employees
                 </span>
             </div>
         </div>
         
         <!-- Employee Cards Container -->
         <div id="employeeCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @foreach($employees->take(6) as $employee)
+            <?php $__currentLoopData = $employees->take(6); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $employee): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <div class="border border-gray-200 rounded-lg p-4 employee-card">
                 <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-medium text-gray-900">{{ $employee->full_name }}</h4>
-                    <span class="text-xs text-gray-500">{{ $employee->employee_id }}</span>
+                    <h4 class="font-medium text-gray-900"><?php echo e($employee->full_name); ?></h4>
+                    <span class="text-xs text-gray-500"><?php echo e($employee->employee_id); ?></span>
                 </div>
                 <div class="space-y-2 text-sm">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Monthly Salary:</span>
-                        <span class="font-medium">₱{{ number_format($employee->salary, 2) }}</span>
+                        <span class="font-medium">₱<?php echo e(number_format($employee->salary, 2)); ?></span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Daily Rate:</span>
-                        <span class="font-medium text-blue-600">₱{{ number_format($employee->daily_rate, 2) }}</span>
+                        <span class="font-medium text-blue-600">₱<?php echo e(number_format($employee->daily_rate, 2)); ?></span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Hourly Rate:</span>
-                        <span class="font-medium text-green-600">₱{{ number_format($employee->hourly_rate, 2) }}</span>
+                        <span class="font-medium text-green-600">₱<?php echo e(number_format($employee->hourly_rate, 2)); ?></span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Overtime Rate:</span>
-                        <span class="font-medium text-orange-600">₱{{ number_format($employee->overtime_rate, 2) }}</span>
+                        <span class="font-medium text-orange-600">₱<?php echo e(number_format($employee->overtime_rate, 2)); ?></span>
                     </div>
                 </div>
             </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
         
 <script id="employees-data" type="application/json">
-    @php
+    <?php
         $employeesData = $employees->map(function($employee) {
             return [
                 'id' => $employee->id,
@@ -345,8 +351,9 @@
                 'overtime_rate' => floatval($employee->overtime_rate ?? 0)
             ];
         })->toArray();
-    @endphp
-    {{ json_encode($employeesData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }}
+    ?>
+    <?php echo e(json_encode($employeesData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)); ?>
+
 </script>
 
 <script>
@@ -367,7 +374,7 @@
 </script>
         
         <!-- Pagination Controls -->
-        @if($employees->count() > 6)
+        <?php if($employees->count() > 6): ?>
         <div class="mt-6 flex items-center justify-between">
             <div class="flex items-center space-x-2">
                 <button id="prevEmployeePage" 
@@ -391,12 +398,12 @@
                 <span class="text-sm text-gray-500">Page</span>
                 <span id="currentEmployeePage" class="text-sm font-medium text-gray-900">1</span>
                 <span class="text-sm text-gray-500">of</span>
-                <span id="totalEmployeePages" class="text-sm font-medium text-gray-900">{{ ceil($employees->count() / 6) }}</span>
+                <span id="totalEmployeePages" class="text-sm font-medium text-gray-900"><?php echo e(ceil($employees->count() / 6)); ?></span>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
     </div>
-    @endif
+    <?php endif; ?>
 
     <!-- Payroll Status Overview -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
@@ -414,15 +421,15 @@
         
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="text-center p-4 bg-gray-50 rounded-lg">
-                <div class="text-2xl font-bold text-gray-900">{{ $summary['pending_count'] }}</div>
+                <div class="text-2xl font-bold text-gray-900"><?php echo e($summary['pending_count']); ?></div>
                 <div class="text-sm text-gray-600">Pending Review</div>
             </div>
             <div class="text-center p-4 bg-gray-50 rounded-lg">
-                <div class="text-2xl font-bold text-gray-900">{{ $summary['approved_count'] }}</div>
+                <div class="text-2xl font-bold text-gray-900"><?php echo e($summary['approved_count']); ?></div>
                 <div class="text-sm text-gray-600">Approved</div>
             </div>
             <div class="text-center p-4 bg-gray-50 rounded-lg">
-                <div class="text-2xl font-bold text-gray-900">{{ $summary['paid_count'] }}</div>
+                <div class="text-2xl font-bold text-gray-900"><?php echo e($summary['paid_count']); ?></div>
                 <div class="text-sm text-gray-600">Paid</div>
             </div>
         </div>
@@ -518,8 +525,8 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($payrolls as $payroll)
-                        @php
+                    <?php $__empty_1 = true; $__currentLoopData = $payrolls; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $payroll): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                        <?php
                             $initials = strtoupper(substr($payroll->employee->first_name, 0, 1) . substr($payroll->employee->last_name, 0, 1));
                             $statusColors = [
                                 'pending' => 'bg-yellow-100 text-yellow-800',
@@ -528,90 +535,91 @@
                                 'rejected' => 'bg-red-100 text-red-800'
                             ];
                             $statusColor = $statusColors[$payroll->status] ?? 'bg-gray-100 text-gray-800';
-                        @endphp
+                        ?>
                         <tr class="hover:bg-gray-50">
                             <!-- Add this checkbox cell -->
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="checkbox" class="payroll-checkbox" value="{{ $payroll->id }}">
+                                <input type="checkbox" class="payroll-checkbox" value="<?php echo e($payroll->id); ?>">
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                         <td class="px-6 py-4">
                             <div class="flex items-center">
                                 <div class="h-8 w-8 flex-shrink-0">
                                     <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                                        <span class="text-xs font-semibold text-white">{{ $initials }}</span>
+                                        <span class="text-xs font-semibold text-white"><?php echo e($initials); ?></span>
                                     </div>
                                 </div>
                                 <div class="ml-3">
-                                    <div class="text-sm font-medium text-gray-900">{{ $payroll->employee->full_name }}</div>
-                                    <div class="text-xs text-gray-500">{{ $payroll->employee->employee_id }}</div>
+                                    <div class="text-sm font-medium text-gray-900"><?php echo e($payroll->employee->full_name); ?></div>
+                                    <div class="text-xs text-gray-500"><?php echo e($payroll->employee->employee_id); ?></div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-gray-900">{{ $payroll->employee->department->name ?? 'N/A' }}</span>
+                            <span class="text-sm text-gray-900"><?php echo e($payroll->employee->department->name ?? 'N/A'); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->basic_salary, 2) }}</span>
+                            <span class="text-sm font-medium text-gray-900">₱<?php echo e(number_format($payroll->basic_salary, 2)); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->overtime_pay, 2) }}</span>
+                            <span class="text-sm font-medium text-gray-900">₱<?php echo e(number_format($payroll->overtime_pay, 2)); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->allowances, 2) }}</span>
+                            <span class="text-sm font-medium text-gray-900">₱<?php echo e(number_format($payroll->allowances, 2)); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->deductions, 2) }}</span>
+                            <span class="text-sm font-medium text-gray-900">₱<?php echo e(number_format($payroll->deductions, 2)); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-bold text-gray-900">₱{{ number_format($payroll->net_pay, 2) }}</span>
+                            <span class="text-sm font-bold text-gray-900">₱<?php echo e(number_format($payroll->net_pay, 2)); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
-                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
-                                {{ ucfirst($payroll->status) }}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo e($statusColor); ?>">
+                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 <?php echo e(str_replace('text-', 'bg-', $statusColor)); ?>"></div>
+                                <?php echo e(ucfirst($payroll->status)); ?>
+
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center space-x-2">
                                 <!-- Eye icon: View Details -->
-                                <button onclick="openPayrollModal('{{ $payroll->id }}')" 
+                                <button onclick="openPayrollModal('<?php echo e($payroll->id); ?>')" 
                                         class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50" 
                                         title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 
                                 <!-- Check icon: Approve (only shown when status is 'pending') -->
-                                @if($payroll->status === 'pending')
-                                    <button onclick="approvePayroll('{{ $payroll->id }}')" 
+                                <?php if($payroll->status === 'pending'): ?>
+                                    <button onclick="approvePayroll('<?php echo e($payroll->id); ?>')" 
                                             class="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50" 
                                             title="Approve">
                                         <i class="fas fa-check"></i>
                                     </button>
                                     
                                     <!-- X icon: Reject (only shown when status is 'pending') -->
-                                    <button onclick="rejectPayroll('{{ $payroll->id }}')" 
+                                    <button onclick="rejectPayroll('<?php echo e($payroll->id); ?>')" 
                                             class="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50" 
                                             title="Reject">
                                         <i class="fas fa-times"></i>
                                     </button>
-                                @elseif($payroll->status === 'approved')
+                                <?php elseif($payroll->status === 'approved'): ?>
                                     <!-- Additional button for approved status -->
                                     <button class="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50" 
                                             title="Pay">
                                         <i class="fas fa-credit-card"></i>
                                     </button>
-                                @elseif($payroll->status === 'paid')
+                                <?php elseif($payroll->status === 'paid'): ?>
                                     <!-- Additional button for paid status -->
                                     <button class="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100" 
                                             title="Print Payslip">
                                         <i class="fas fa-print"></i>
                                     </button>
-                                @endif
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="10" class="px-6 py-12 text-center"> <!-- Changed from 9 to 10 -->
                             <div class="flex flex-col items-center justify-center">
@@ -623,7 +631,7 @@
                             </div>
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -632,22 +640,24 @@
     <div class="px-4 sm:px-6 py-4 border-t border-gray-200">
         <div class="flex items-center justify-between">
             <div class="flex-1 flex justify-between sm:hidden">
-                {{ $payrolls->appends(request()->query())->links('pagination::simple-tailwind') }}
+                <?php echo e($payrolls->appends(request()->query())->links('pagination::simple-tailwind')); ?>
+
             </div>
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                     <p class="text-sm text-gray-700">
                         Showing
-                        <span class="font-medium">{{ $payrolls->firstItem() }}</span>
+                        <span class="font-medium"><?php echo e($payrolls->firstItem()); ?></span>
                         to
-                        <span class="font-medium">{{ $payrolls->lastItem() }}</span>
+                        <span class="font-medium"><?php echo e($payrolls->lastItem()); ?></span>
                         of
-                        <span class="font-medium">{{ $payrolls->total() }}</span>
+                        <span class="font-medium"><?php echo e($payrolls->total()); ?></span>
                         results
                     </p>
                 </div>
                 <div>
-                    {{ $payrolls->appends(request()->query())->links('pagination::tailwind') }}
+                    <?php echo e($payrolls->appends(request()->query())->links('pagination::tailwind')); ?>
+
                 </div>
             </div>
         </div>
@@ -657,8 +667,8 @@
 <!-- Mobile Cards - Keep this section as is -->
 <div class="lg:hidden">
     <div class="p-4 space-y-4">
-        @forelse($payrolls as $payroll)
-            @php
+        <?php $__empty_1 = true; $__currentLoopData = $payrolls; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $payroll): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+            <?php
                 $initials = strtoupper(substr($payroll->employee->first_name, 0, 1) . substr($payroll->employee->last_name, 0, 1));
                 $statusColors = [
                     'pending' => 'bg-yellow-100 text-yellow-800',
@@ -667,76 +677,78 @@
                     'rejected' => 'bg-red-100 text-red-800'
                 ];
                 $statusColor = $statusColors[$payroll->status] ?? 'bg-gray-100 text-gray-800';
-            @endphp
+            ?>
             <div class="border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center space-x-3">
                         <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                            <span class="text-sm font-medium text-white">{{ $initials }}</span>
+                            <span class="text-sm font-medium text-white"><?php echo e($initials); ?></span>
                         </div>
                         <div>
-                            <div class="font-medium text-gray-900">{{ $payroll->employee->full_name }}</div>
-                            <div class="text-sm text-gray-500">{{ $payroll->employee->department->name ?? 'N/A' }}</div>
+                            <div class="font-medium text-gray-900"><?php echo e($payroll->employee->full_name); ?></div>
+                            <div class="text-sm text-gray-500"><?php echo e($payroll->employee->department->name ?? 'N/A'); ?></div>
                         </div>
                     </div>
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
-                        <div class="w-1.5 h-1.5 rounded-full mr-1 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
-                        {{ ucfirst($payroll->status) }}
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo e($statusColor); ?>">
+                        <div class="w-1.5 h-1.5 rounded-full mr-1 <?php echo e(str_replace('text-', 'bg-', $statusColor)); ?>"></div>
+                        <?php echo e(ucfirst($payroll->status)); ?>
+
                     </span>
                 </div>
                 <div class="grid grid-cols-2 gap-4 text-sm mb-3">
                     <div>
                         <div class="text-gray-500">Basic Salary</div>
-                        <div class="font-medium">₱{{ number_format($payroll->basic_salary, 2) }}</div>
+                        <div class="font-medium">₱<?php echo e(number_format($payroll->basic_salary, 2)); ?></div>
                     </div>
                     <div>
                         <div class="text-gray-500">Net Pay</div>
-                        <div class="font-medium">₱{{ number_format($payroll->net_pay, 2) }}</div>
+                        <div class="font-medium">₱<?php echo e(number_format($payroll->net_pay, 2)); ?></div>
                     </div>
                     <div>
                         <div class="text-gray-500">Overtime</div>
-                        <div class="font-medium">₱{{ number_format($payroll->overtime_pay, 2) }}</div>
+                        <div class="font-medium">₱<?php echo e(number_format($payroll->overtime_pay, 2)); ?></div>
                     </div>
                     <div>
                         <div class="text-gray-500">Deductions</div>
-                        <div class="font-medium">₱{{ number_format($payroll->deductions, 2) }}</div>
+                        <div class="font-medium">₱<?php echo e(number_format($payroll->deductions, 2)); ?></div>
                     </div>
                 </div>
                 <div class="flex justify-end space-x-2">
-                    <button onclick="openPayrollModal('{{ $payroll->id }}')" class="text-blue-600 hover:text-blue-900 transition-colors">
+                    <button onclick="openPayrollModal('<?php echo e($payroll->id); ?>')" class="text-blue-600 hover:text-blue-900 transition-colors">
                         <i class="fas fa-eye mr-1"></i>View
                     </button>
-                    @if($payroll->status === 'pending')
-                        <button onclick="approvePayroll('{{ $payroll->id }}')" class="text-green-600 hover:text-green-900 transition-colors">
+                    <?php if($payroll->status === 'pending'): ?>
+                        <button onclick="approvePayroll('<?php echo e($payroll->id); ?>')" class="text-green-600 hover:text-green-900 transition-colors">
                             <i class="fas fa-check mr-1"></i>Approve
                         </button>
-                        <button onclick="rejectPayroll('{{ $payroll->id }}')" class="text-red-600 hover:text-red-900 transition-colors">
+                        <button onclick="rejectPayroll('<?php echo e($payroll->id); ?>')" class="text-red-600 hover:text-red-900 transition-colors">
                             <i class="fas fa-times mr-1"></i>Reject
                         </button>
-                    @elseif($payroll->status === 'approved')
+                    <?php elseif($payroll->status === 'approved'): ?>
                         <button class="text-purple-600 hover:text-purple-900 transition-colors">
                             <i class="fas fa-credit-card mr-1"></i>Pay
                         </button>
-                    @elseif($payroll->status === 'paid')
+                    <?php elseif($payroll->status === 'paid'): ?>
                         <button class="text-gray-600 hover:text-gray-900 transition-colors">
                             <i class="fas fa-print mr-1"></i>Print
                         </button>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
-        @empty
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
             <div class="text-center text-gray-500 py-8">
                 <i class="fas fa-file-invoice-dollar text-3xl mb-3 opacity-50"></i>
                 <p>No payroll records found</p>
             </div>
-        @endforelse
+        <?php endif; ?>
     </div>
     
     <!-- Mobile Pagination -->
     <div class="px-4 py-4 border-t border-gray-200">
         <div class="flex items-center justify-between">
             <div class="flex-1 flex justify-between">
-                {{ $payrolls->appends(request()->query())->links('pagination::simple-tailwind') }}
+                <?php echo e($payrolls->appends(request()->query())->links('pagination::simple-tailwind')); ?>
+
             </div>
         </div>
     </div>
@@ -745,8 +757,8 @@
         <!-- Mobile Cards -->
         <div class="lg:hidden">
             <div class="p-4 space-y-4">
-                @forelse($payrolls as $payroll)
-                    @php
+                <?php $__empty_1 = true; $__currentLoopData = $payrolls; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $payroll): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                    <?php
                         $initials = strtoupper(substr($payroll->employee->first_name, 0, 1) . substr($payroll->employee->last_name, 0, 1));
                         $statusColors = [
                             'pending' => 'bg-yellow-100 text-yellow-800',
@@ -755,75 +767,77 @@
                             'rejected' => 'bg-red-100 text-red-800'
                         ];
                         $statusColor = $statusColors[$payroll->status] ?? 'bg-gray-100 text-gray-800';
-                    @endphp
+                    ?>
                     <div class="border border-gray-200 rounded-lg p-4">
                         <div class="flex items-center justify-between mb-3">
                             <div class="flex items-center space-x-3">
                                 <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                                    <span class="text-sm font-medium text-white">{{ $initials }}</span>
+                                    <span class="text-sm font-medium text-white"><?php echo e($initials); ?></span>
                                 </div>
                                 <div>
-                                    <div class="font-medium text-gray-900">{{ $payroll->employee->full_name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $payroll->employee->department->name ?? 'N/A' }}</div>
+                                    <div class="font-medium text-gray-900"><?php echo e($payroll->employee->full_name); ?></div>
+                                    <div class="text-sm text-gray-500"><?php echo e($payroll->employee->department->name ?? 'N/A'); ?></div>
                                 </div>
                             </div>
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
-                                <div class="w-1.5 h-1.5 rounded-full mr-1 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
-                                {{ ucfirst($payroll->status) }}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo e($statusColor); ?>">
+                                <div class="w-1.5 h-1.5 rounded-full mr-1 <?php echo e(str_replace('text-', 'bg-', $statusColor)); ?>"></div>
+                                <?php echo e(ucfirst($payroll->status)); ?>
+
                             </span>
                         </div>
                         <div class="grid grid-cols-2 gap-4 text-sm mb-3">
                             <div>
                                 <div class="text-gray-500">Basic Salary</div>
-                                <div class="font-medium">₱{{ number_format($payroll->basic_salary, 2) }}</div>
+                                <div class="font-medium">₱<?php echo e(number_format($payroll->basic_salary, 2)); ?></div>
                             </div>
                             <div>
                                 <div class="text-gray-500">Net Pay</div>
-                                <div class="font-medium">₱{{ number_format($payroll->net_pay, 2) }}</div>
+                                <div class="font-medium">₱<?php echo e(number_format($payroll->net_pay, 2)); ?></div>
                             </div>
                             <div>
                                 <div class="text-gray-500">Overtime</div>
-                                <div class="font-medium">₱{{ number_format($payroll->overtime_pay, 2) }}</div>
+                                <div class="font-medium">₱<?php echo e(number_format($payroll->overtime_pay, 2)); ?></div>
                             </div>
                             <div>
                                 <div class="text-gray-500">Deductions</div>
-                                <div class="font-medium">₱{{ number_format($payroll->deductions, 2) }}</div>
+                                <div class="font-medium">₱<?php echo e(number_format($payroll->deductions, 2)); ?></div>
                             </div>
                         </div>
                         <div class="flex justify-end space-x-2">
-                            <button onclick="openPayrollModal('{{ $payroll->id }}')" class="text-blue-600 hover:text-blue-900 transition-colors">
+                            <button onclick="openPayrollModal('<?php echo e($payroll->id); ?>')" class="text-blue-600 hover:text-blue-900 transition-colors">
                                 <i class="fas fa-eye mr-1"></i>View
                             </button>
-                            @if($payroll->status === 'pending')
-                                <button onclick="approvePayroll('{{ $payroll->id }}')" class="text-green-600 hover:text-green-900 transition-colors">
+                            <?php if($payroll->status === 'pending'): ?>
+                                <button onclick="approvePayroll('<?php echo e($payroll->id); ?>')" class="text-green-600 hover:text-green-900 transition-colors">
                                     <i class="fas fa-check mr-1"></i>Approve
                                 </button>
-                                <button onclick="rejectPayroll('{{ $payroll->id }}')" class="text-red-600 hover:text-red-900 transition-colors">
+                                <button onclick="rejectPayroll('<?php echo e($payroll->id); ?>')" class="text-red-600 hover:text-red-900 transition-colors">
                                     <i class="fas fa-times mr-1"></i>Reject
                                 </button>
-                            @elseif($payroll->status === 'approved')
+                            <?php elseif($payroll->status === 'approved'): ?>
                                 <button class="text-purple-600 hover:text-purple-900 transition-colors">
                                     <i class="fas fa-credit-card mr-1"></i>Pay
                                 </button>
-                            @elseif($payroll->status === 'paid')
+                            <?php elseif($payroll->status === 'paid'): ?>
                                 <button class="text-gray-600 hover:text-gray-900 transition-colors">
                                     <i class="fas fa-print mr-1"></i>Print
                                 </button>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <div class="text-center text-gray-500 py-8">
                         No payroll records found
                     </div>
-                @endforelse
+                <?php endif; ?>
             </div>
             
             <!-- Mobile Pagination -->
             <div class="px-4 py-4 border-t border-gray-200">
                 <div class="flex items-center justify-between">
                     <div class="flex-1 flex justify-between">
-                        {{ $payrolls->appends(request()->query())->links('pagination::simple-tailwind') }}
+                        <?php echo e($payrolls->appends(request()->query())->links('pagination::simple-tailwind')); ?>
+
                     </div>
                 </div>
             </div>
@@ -839,8 +853,8 @@
         <!-- Approve All Pending -->
         <div class="inline">
             <!-- Add these hidden inputs for the Approve All Pending button -->
-            <input type="hidden" name="bulk_start_date" id="bulkStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
-            <input type="hidden" name="bulk_end_date" id="bulkEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+            <input type="hidden" name="bulk_start_date" id="bulkStartDate" value="<?php echo e(old('start_date', request('start_date', date('Y-m-d')))); ?>">
+            <input type="hidden" name="bulk_end_date" id="bulkEndDate" value="<?php echo e(old('end_date', request('end_date', date('Y-m-d')))); ?>">
             
             <button type="button" 
                     onclick="approveAllPendingWithConfirmation()"
@@ -852,10 +866,10 @@
         </div>
 
         <!-- Process Payments -->
-        <form action="{{ route('payrolls.process-payments') }}" method="POST" class="inline" id="processPaymentsForm">
-            @csrf
-            <input type="hidden" name="start_date" id="paymentStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
-            <input type="hidden" name="end_date" id="paymentEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+        <form action="<?php echo e(route('payrolls.process-payments')); ?>" method="POST" class="inline" id="processPaymentsForm">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="start_date" id="paymentStartDate" value="<?php echo e(old('start_date', request('start_date', date('Y-m-d')))); ?>">
+            <input type="hidden" name="end_date" id="paymentEndDate" value="<?php echo e(old('end_date', request('end_date', date('Y-m-d')))); ?>">
             <input type="hidden" name="payroll_ids" id="payrollIds" value="">
             
             <button type="button" 
@@ -868,39 +882,39 @@
         </form>
 
         <!-- Generate Payslips - Only for admin/hr/manager -->
-        @if(!in_array(auth()->user()->role ?? '', ['employee']))
+        <?php if(!in_array(auth()->user()->role ?? '', ['employee'])): ?>
         <div class="flex items-center space-x-2">
             <!-- Generate Payslips Button -->
-            <form action="{{ route('payrolls.generate-payslips') }}" method="POST" class="inline" id="payslipForm">
-                @csrf
-                <input type="hidden" name="start_date" id="payslipStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
-                <input type="hidden" name="end_date" id="payslipEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+            <form action="<?php echo e(route('payrolls.generate-payslips')); ?>" method="POST" class="inline" id="payslipForm">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="start_date" id="payslipStartDate" value="<?php echo e(old('start_date', request('start_date', date('Y-m-d')))); ?>">
+                <input type="hidden" name="end_date" id="payslipEndDate" value="<?php echo e(old('end_date', request('end_date', date('Y-m-d')))); ?>">
 
             </form>
 
             <!-- Download All Payslips Button (if there are generated payslips) - Only for admin/hr/manager -->
-            @if(isset($payslip_results) && count($payslip_results) > 0 && !in_array(auth()->user()->role ?? '', ['employee']))
-            <a href="{{ route('payrolls.download-all-payslips', ['start_date' => request('start_date', date('Y-m-d')), 'end_date' => request('end_date', date('Y-m-d'))]) }}"
+            <?php if(isset($payslip_results) && count($payslip_results) > 0 && !in_array(auth()->user()->role ?? '', ['employee'])): ?>
+            <a href="<?php echo e(route('payrolls.download-all-payslips', ['start_date' => request('start_date', date('Y-m-d')), 'end_date' => request('end_date', date('Y-m-d'))])); ?>"
             class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                 <i class="fas fa-download mr-2"></i>
                 Download All Payslips
             </a>
-            @endif
+            <?php endif; ?>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Export Payroll - Only for admin/hr/manager -->
-        @if(!in_array(auth()->user()->role ?? '', ['employee']))
+        <?php if(!in_array(auth()->user()->role ?? '', ['employee'])): ?>
         <div class="flex items-center space-x-2">
         <!-- Export with Calculations Button -->
 
 
             <!-- Export Payroll Dropdown -->
             <div class="relative inline-block" id="exportDropdownContainer">
-                <form action="{{ route('payrolls.export-payroll') }}" method="POST" class="inline" id="exportForm" onsubmit="return false;">
-            @csrf
-            <input type="hidden" name="start_date" id="exportStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
-            <input type="hidden" name="end_date" id="exportEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+                <form action="<?php echo e(route('payrolls.export-payroll')); ?>" method="POST" class="inline" id="exportForm" onsubmit="return false;">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="start_date" id="exportStartDate" value="<?php echo e(old('start_date', request('start_date', date('Y-m-d')))); ?>">
+            <input type="hidden" name="end_date" id="exportEndDate" value="<?php echo e(old('end_date', request('end_date', date('Y-m-d')))); ?>">
                     <input type="hidden" name="format" id="exportFormat" value="pdf">
                     <button type="button" 
                             id="exportPayrollButton"
@@ -930,7 +944,7 @@
             </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
     </div>
 
 
@@ -978,7 +992,7 @@ async function exportPayrollWithCalculations() {
         // Create a simple form submission
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = '{{ route("payrolls.export-with-calculations") }}';
+        form.action = '<?php echo e(route("payrolls.export-with-calculations")); ?>';
         form.style.display = 'none';
         
         // Add CSRF token
@@ -1144,7 +1158,7 @@ async function exportPayrollWithCalculations() {
                     <div class="flex items-center">
                         <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
                         <span class="text-sm font-medium text-blue-800">
-                            Period: <span id="paymentPeriodDisplay">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
+                            Period: <span id="paymentPeriodDisplay"><?php echo e(date('M d, Y')); ?> - <?php echo e(date('M d, Y')); ?></span>
                         </span>
                     </div>
                 </div>
@@ -1780,7 +1794,7 @@ function openPayrollModal(payrollId) {
     // Set the download payslip link dynamically
     const downloadLink = document.getElementById('downloadPayslipLink');
     if (downloadLink && payrollId) {
-        downloadLink.href = '{{ route("payroll.download-payslip", ":id") }}'.replace(':id', payrollId);
+        downloadLink.href = '<?php echo e(route("payroll.download-payslip", ":id")); ?>'.replace(':id', payrollId);
         // Or use data attribute
         downloadLink.setAttribute('data-payroll-id', payrollId);
     }
@@ -3468,7 +3482,7 @@ async function testPaymentProcessing() {
     console.log('Testing payment processing...');
     
     // Test 1: Check route
-    console.log('Route URL:', "{{ route('payrolls.process-payments') }}");
+    console.log('Route URL:', "<?php echo e(route('payrolls.process-payments')); ?>");
     
     // Test 2: Check form values
     const startDate = document.getElementById('paymentStartDate').value;
@@ -3572,4 +3586,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.dashboard-base', ['user' => auth()->user(), 'activeRoute' => 'payroll.index'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\Aeternitas-System-V2\resources\views/payroll/index.blade.php ENDPATH**/ ?>

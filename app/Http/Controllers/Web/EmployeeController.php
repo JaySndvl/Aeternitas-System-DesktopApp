@@ -257,4 +257,23 @@ class EmployeeController extends Controller
         $user = Auth::user();
         return view('employees.payroll', compact('employee', 'user'));
     }
+
+public function documents($id)
+{
+    $user = auth()->user();
+    $currentCompanyId = session('current_company_id');
+    
+    // Get employee only if they belong to the current company
+    $employee = Employee::with(['department'])
+        ->where('company_id', $currentCompanyId)
+        ->find($id);
+    
+    if (!$employee) {
+        abort(404, 'Employee not found or not in current company');
+    }
+    
+    $documents = [];
+    
+    return view('employees.documents', compact('employee', 'documents', 'user'));
+}
 }

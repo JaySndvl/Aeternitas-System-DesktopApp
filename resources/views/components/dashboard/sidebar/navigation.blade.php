@@ -292,29 +292,32 @@
         @endif
         
         <!-- Additional test items to ensure scrolling -->
-        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
-            <i class="fas fa-file-alt mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
+        @if($user->role === 'admin' || $user->role === 'hr')
+        <!-- Documents -->
+        <a href="{{ route('documents.index') }}" class="flex items-center px-4 py-3 text-sm font-medium {{ request()->routeIs('documents.*') ? 'text-blue-600 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600' }} rounded-lg transition-all duration-200 group">
+            <i class="fas fa-folder mr-3 text-lg {{ request()->routeIs('documents.*') ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600' }}"></i>
             <span>Documents</span>
         </a>
-        
+
         <a href="{{ route('attendance.leave-management.create') }}" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-calendar-check mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Leave Requests</span>
         </a>
-        
+
         <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-user-friends mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Team Directory</span>
         </a>
-        
+
         <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-bell mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Notifications</span>
         </a>
-        
+
         <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-question-circle mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Help & Support</span>
         </a>
+        @endif
     </div>
 </nav>
