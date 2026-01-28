@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\LoginLog;
 
 class AuthController extends Controller
 {
@@ -52,5 +53,22 @@ class AuthController extends Controller
     public function user(Request $request)
     {
         return response()->json($request->user());
+    }
+
+        protected function authenticated(Request $request, $user)
+    {
+        // Record login log
+        LoginLog::create([
+            'account_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        // Update last login in accounts table
+        $user->update([
+            'last_login_at' => now()
+        ]);
+
+        return redirect()->intended($this->redirectPath());
     }
 }

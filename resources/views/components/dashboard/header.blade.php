@@ -115,11 +115,196 @@
                 </div>
             @endif
             
-            <!-- Notifications -->
-            <button class="relative p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+            <!-- Notifications - Only show for HR and Admin -->
+            @if(in_array($user->role, ['admin', 'hr']))
+            <div class="relative" x-data="{
+                open: false,
+                notifications: [],
+                unreadCount: 0,
+                loading: false,
+                userRole: '{{ $user->role }}',
+                
+                init() {
+                    if (this.userRole === 'admin' || this.userRole === 'hr') {
+                        this.loadNotifications();
+                        
+                        // Refresh every 60 seconds
+                        setInterval(() => {
+                            if (!this.open) {
+                                this.loadNotifications();
+                            }
+                        }, 60000);
+                    }
+                },
+                
+                toggleNotifications() {
+                    if (this.userRole !== 'admin' && this.userRole !== 'hr') {
+                        return; // Don't open for non-HR/Admin
+                    }
+                    
+                    this.open = !this.open;
+                    if (this.open) {
+                        this.loadNotifications();
+                    }
+                },
+                
+                async loadNotifications() {
+                    if (this.userRole !== 'admin' && this.userRole !== 'hr') {
+                        return; // Don't load for non-HR/Admin
+                    }
+                    
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/notifications/login-logs', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            if (response.status === 403) {
+                                // Unauthorized - user is not HR/Admin
+                                this.notifications = [];
+                                this.unreadCount = 0;
+                                return;
+                            }
+                            throw new Error('Failed to load notifications');
+                        }
+                        
+                        const data = await response.json();
+                        this.notifications = data.logs || [];
+                        this.unreadCount = data.unread_count || 0;
+                        this.userRole = data.user_role || this.userRole;
+                    } catch (error) {
+                        console.error('Error loading notifications:', error);
+                        this.notifications = [{
+                            id: 'error',
+                            employee_name: 'Unable to load login logs',
+                            employee_email: 'Please try again later',
+                            ip_address: 'Error',
+                            user_agent: 'Connection failed',
+                            time_ago: 'Just now'
+                        }];
+                        this.unreadCount = 0;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                markAllAsRead() {
+                    this.unreadCount = 0;
+                    // In a real implementation, you would mark notifications as read in the database
+                    // For now, we just clear the badge
+                }
+            }">
+                <button @click="toggleNotifications()" 
+                        :class="{'bg-gray-100': open}"
+                        class="relative p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-bell text-lg sm:text-xl"></i>
+                    <template x-if="unreadCount > 0">
+                        <span x-text="unreadCount > 99 ? '99+' : unreadCount" 
+                              class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 block h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center animate-pulse"></span>
+                    </template>
+                </button>
+                
+                <!-- Notification Dropdown -->
+                <div x-show="open" 
+                     x-cloak
+                     @click.away="open = false"
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 max-h-[80vh] overflow-hidden flex flex-col">
+                    
+                    <!-- Header -->
+                    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900">Recent Login Activity</h3>
+                            <p class="text-xs text-gray-500 mt-0.5" x-text="userRole === 'admin' ? 'Admin View' : 'HR View'"></p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span x-show="loading" class="text-xs text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>
+                            </span>
+                            <button @click="loadNotifications()" class="text-xs text-blue-600 hover:text-blue-800 p-1">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Notifications List -->
+                    <div class="flex-1 overflow-y-auto">
+                        <template x-if="notifications.length === 0 && !loading">
+                            <div class="px-4 py-8 text-center">
+                                <i class="fas fa-bell-slash text-gray-300 text-3xl mb-2"></i>
+                                <p class="text-sm text-gray-500">No recent login activity</p>
+                                <p class="text-xs text-gray-400 mt-1">Login activity will appear here</p>
+                            </div>
+                        </template>
+                        
+                        <template x-if="loading">
+                            <div class="px-4 py-8 text-center">
+                                <div class="inline-block">
+                                    <i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">Loading login logs...</p>
+                            </div>
+                        </template>
+                        
+                        <template x-for="notification in notifications" :key="notification.id">
+                            <div class="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-100 to-blue-50 flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-sign-in-alt text-blue-600 text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3 flex-1 min-w-0">
+                                        <div class="flex items-start justify-between">
+                                            <p class="text-sm font-medium text-gray-900 truncate" x-text="notification.employee_name"></p>
+                                            <span class="text-xs text-gray-400 ml-2 flex-shrink-0" x-text="notification.time_ago"></span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-0.5 truncate" x-text="notification.employee_email"></p>
+                                        <div class="flex items-center mt-1 space-x-3">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                <i class="fas fa-globe mr-1 text-xs"></i>
+                                                <span x-text="notification.ip_address"></span>
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                                                <i class="fas fa-desktop mr-1 text-xs"></i>
+                                                <span x-text="notification.user_agent"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="px-4 py-2 border-t border-gray-100 bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs text-gray-500">
+                                <span x-text="notifications.length"></span> recent logins
+                            </p>
+                            <button @click="markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                Mark as read
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @else
+            <!-- Empty placeholder for non-HR/Admin users -->
+            <div class="p-1.5 sm:p-2 text-gray-300">
                 <i class="fas fa-bell text-lg sm:text-xl"></i>
-                <span class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 block h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">3</span>
-            </button>
+            </div>
+            @endif
             
             <!-- Messages - Hidden on small mobile -->
             <button class="relative p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors hidden sm:block">
@@ -139,6 +324,7 @@
                 
                 <!-- Dropdown Menu -->
                 <div x-show="open" 
+                     x-cloak
                      @click.away="open = false"
                      x-transition:enter="transition ease-out duration-100"
                      x-transition:enter-start="transform opacity-0 scale-95"
@@ -182,6 +368,12 @@
         </div>
     </div>
 </header>
+
+<style>
+[x-cloak] {
+    display: none !important;
+}
+</style>
 
 <script>
 // Real-time clock functionality

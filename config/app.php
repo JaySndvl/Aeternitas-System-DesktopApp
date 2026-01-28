@@ -123,4 +123,12 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'aliases' => [
+    'App' => Illuminate\Support\Facades\App::class,
+    'Arr' => Illuminate\Support\Arr::class,
+    'Artisan' => Illuminate\Support\Facades\Artisan::class,
+    // ... other facades
+    'View' => Illuminate\Support\Facades\View::class,
+    // ... rest of facades
+],
 ];

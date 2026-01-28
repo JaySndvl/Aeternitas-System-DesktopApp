@@ -33,6 +33,7 @@ unset($__defined_vars, $__key, $__value); ?>
     
     // Check if employee is currently timed in (for employee role users)
     $isCurrentlyTimedIn = false;
+    $todayAttendance = null;
     if ($user->role === 'employee' && $user->employee) {
         $todayAttendance = $user->employee->getTodayAttendance();
         $isCurrentlyTimedIn = $todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out;
@@ -278,46 +279,79 @@ unset($__defined_vars, $__key, $__value); ?>
         <?php endif; ?>
         
         <?php if($user->role === 'employee'): ?>
-        <!-- Time In Button -->
-        <?php if(!isset($todayAttendance) || !$todayAttendance || !$todayAttendance->time_in || $todayAttendance->time_out): ?>
-        <button onclick="sidebarTimeIn()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-lg transition-all duration-200 group">
-            <i class="fas fa-sign-in-alt mr-3 text-lg text-gray-400 group-hover:text-green-600"></i>
-            <span>Time In</span>
-        </button>
-        <?php else: ?>
-        <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
-            <i class="fas fa-check mr-3 text-lg text-gray-400"></i>
-            <span>Already Clocked In</span>
-        </div>
-        <?php endif; ?>
+            <!-- Time In Button -->
+            <?php if(!$todayAttendance || !$todayAttendance->time_in || $todayAttendance->time_out): ?>
+                <button onclick="sidebarConfirmTimeIn()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-lg transition-all duration-200 group">
+                    <i class="fas fa-sign-in-alt mr-3 text-lg text-gray-400 group-hover:text-green-600"></i>
+                    <span>Time In</span>
+                </button>
+            <?php else: ?>
+                <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
+                    <i class="fas fa-check mr-3 text-lg text-gray-400"></i>
+                    <span>Already Clocked In</span>
+                </div>
+            <?php endif; ?>
 
-        <!-- Time Out Button -->
-        <?php if($todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out): ?>
-        <button onclick="sidebarTimeOut()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-red-600 rounded-lg transition-all duration-200 group">
-            <i class="fas fa-sign-out-alt mr-3 text-lg text-gray-400 group-hover:text-red-600"></i>
-            <span>Time Out</span>
-        </button>
-        <?php elseif($todayAttendance && $todayAttendance->time_out): ?>
-        <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
-            <i class="fas fa-check mr-3 text-lg text-gray-400"></i>
-            <span>Already Clocked Out</span>
-        </div>
-        <?php else: ?>
-        <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
-            <i class="fas fa-sign-out-alt mr-3 text-lg text-gray-400"></i>
-            <span>Time Out (Clock In First)</span>
-        </div>
-        <?php endif; ?>
-        
-        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
-            <i class="fas fa-download mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
-            <span>Download Payslip</span>
-        </a>
-        
-        <a href="<?php echo e(route('hr.profile')); ?>" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
-            <i class="fas fa-edit mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
-            <span>Update Profile</span>
-        </a>
+            <!-- Time Out Button -->
+            <?php if($todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out): ?>
+                <button onclick="sidebarConfirmTimeOut()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-red-600 rounded-lg transition-all duration-200 group">
+                    <i class="fas fa-sign-out-alt mr-3 text-lg text-gray-400 group-hover:text-red-600"></i>
+                    <span>Time Out</span>
+                </button>
+            <?php elseif($todayAttendance && $todayAttendance->time_out): ?>
+                <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
+                    <i class="fas fa-check mr-3 text-lg text-gray-400"></i>
+                    <span>Already Clocked Out</span>
+                </div>
+            <?php else: ?>
+                <div class="flex items-center px-4 py-3 text-sm font-medium text-gray-400 rounded-lg cursor-not-allowed">
+                    <i class="fas fa-sign-out-alt mr-3 text-lg text-gray-400"></i>
+                    <span>Time Out (Clock In First)</span>
+                </div>
+            <?php endif; ?>
+
+            <!-- Payslip Download Button for Employees -->
+            <?php
+                // Simple check - if we can't query database, just show disabled button
+                $latestPayroll = null;
+                try {
+                    if (isset($user->employee) && $user->employee) {
+                        $latestPayroll = \App\Models\Payroll::where('employee_id', $user->employee->id)
+                            ->whereIn('status', ['approved', 'processed', 'paid'])
+                            ->latest()
+                            ->first();
+                    }
+                } catch (\Exception $e) {
+                    // If there's an error, just show disabled button
+                    $latestPayroll = null;
+                }
+            ?>
+            
+            <?php if($latestPayroll): ?>
+                <button id="nav-download-payslip-btn" 
+                        onclick="downloadEmployeePayslip('<?php echo e($latestPayroll->id); ?>')" 
+                        class="w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 group">
+                    <i class="fas fa-download mr-3 text-lg"></i>
+                    <span>Download Payslip</span>
+                </button>
+            <?php else: ?>
+                <button disabled class="w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-gray-500 bg-gray-100 rounded-lg cursor-not-allowed group">
+                    <i class="fas fa-download mr-3 text-lg text-gray-400"></i>
+                    <span>No Payslip Available</span>
+                </button>
+            <?php endif; ?>
+
+            <!-- Update Profile -->
+            <a href="<?php echo e(route('hr.profile')); ?>" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+                <i class="fas fa-edit mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
+                <span>Update Profile</span>
+            </a>
+
+            <!-- Contact HR -->
+            <button onclick="contactHR()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+                <i class="fas fa-question-circle mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
+                <span>Contact HR</span>
+            </button>
         <?php endif; ?>
         
         <!-- Additional test items to ensure scrolling -->
@@ -350,4 +384,190 @@ unset($__defined_vars, $__key, $__value); ?>
         <?php endif; ?>
     </div>
 </nav>
-<?php /**PATH C:\xampp\htdocs\Aeternitas-System-V2\resources\views/components/dashboard/sidebar/navigation.blade.php ENDPATH**/ ?>
+
+<script>
+// Function to handle payslip download
+function downloadEmployeePayslip(payrollId) {
+    // Check if the function exists in the main dashboard
+    if (typeof window.downloadEmployeePayslip === 'function') {
+        // Use the dashboard's function
+        window.downloadEmployeePayslip(payrollId);
+    } else {
+        // Fallback: direct download
+        window.open(`/employee/payslip/download/${payrollId}`, '_blank');
+    }
+}
+
+// Get Philippine Standard Time (UTC+8)
+function getPhilippineTime() {
+    const now = new Date();
+    return new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+}
+
+// Format time in 12-hour format with AM/PM
+function format12HourTime(date) {
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = hours.toString().padStart(2, '0');
+    return `${hoursStr}:${minutes}:${seconds} ${ampm}`;
+}
+
+// Show confirmation modal (similar to dashboard)
+function showConfirmationModal(title, message, confirmAction, options = {}) {
+    // Check if the modal exists in the main dashboard
+    if (typeof window.showConfirmationModal === 'function') {
+        // Use the dashboard's modal function
+        window.showConfirmationModal(title, message, confirmAction, options);
+        return;
+    }
+    
+    // Fallback: Use browser's native confirm dialog
+    if (confirm(`${title}\n\n${message}`)) {
+        confirmAction();
+    }
+}
+
+// Hide confirmation modal
+function hideConfirmationModal() {
+    if (typeof window.hideConfirmationModal === 'function') {
+        window.hideConfirmationModal();
+    }
+}
+
+// ============================================================
+// SIDEBAR TIME IN/OUT CONFIRMATION FUNCTIONS
+// ============================================================
+
+// Confirm Time In from sidebar
+function sidebarConfirmTimeIn() {
+    // Get current time for the confirmation message
+    const currentTime = getPhilippineTime();
+    const formattedTime = format12HourTime(currentTime);
+    
+    showConfirmationModal(
+        'Confirm Time In',
+        `Are you sure you want to clock in at ${formattedTime}?`,
+        sidebarTimeIn, // This will be called after confirmation
+        {
+            color: 'green',
+            icon: 'fa-sign-in-alt'
+        }
+    );
+}
+
+// Confirm Time Out from sidebar
+function sidebarConfirmTimeOut() {
+    // Get current time for the confirmation message
+    const currentTime = getPhilippineTime();
+    const formattedTime = format12HourTime(currentTime);
+    
+    showConfirmationModal(
+        'Confirm Time Out',
+        `Are you sure you want to clock out at ${formattedTime}?`,
+        sidebarTimeOut, // This will be called after confirmation
+        {
+            color: 'red',
+            icon: 'fa-sign-out-alt'
+        }
+    );
+}
+
+// Time In function for sidebar (called after confirmation)
+async function sidebarTimeIn() {
+    try {
+        const response = await fetch('<?php echo e(route("attendance.time-in")); ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showSuccess(data.message);
+            // Refresh the page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showError(data.error || 'Failed to clock in');
+        }
+    } catch (error) {
+        console.error('Error clocking in:', error);
+        showError('Failed to clock in');
+    }
+}
+
+// Time Out function for sidebar (called after confirmation)
+async function sidebarTimeOut() {
+    try {
+        const response = await fetch('<?php echo e(route("attendance.time-out")); ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showSuccess(data.message);
+            // Refresh the page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showError(data.error || 'Failed to clock out');
+        }
+    } catch (error) {
+        console.error('Error clocking out:', error);
+        showError('Failed to clock out');
+    }
+}
+
+// ============================================================
+// CONTACT HR FUNCTION (PLACEHOLDER)
+// ============================================================
+
+function contactHR() {
+    // Placeholder function - Add your Contact HR functionality here
+    alert('Contact HR functionality will be implemented here.\n\nThis could open a contact form, show HR contact information, or open a chat interface.');
+    
+    // Example of what you could do:
+    // 1. Open a modal with HR contact information
+    // 2. Show a form to send a message to HR
+    // 3. Open an email client with HR email pre-filled
+    // 4. Show HR office location and contact numbers
+}
+
+// Show success message
+function showSuccess(message) {
+    // Check if the function exists in the main dashboard
+    if (typeof window.showSuccess === 'function') {
+        window.showSuccess(message);
+        return;
+    }
+    
+    // Fallback: alert
+    alert('Success: ' + message);
+}
+
+// Show error message
+function showError(message) {
+    // Check if the function exists in the main dashboard
+    if (typeof window.showError === 'function') {
+        window.showError(message);
+        return;
+    }
+    
+    // Fallback: alert
+    alert('Error: ' + message);
+}
+</script><?php /**PATH C:\xampp\htdocs\Aeternitas-System-V2\resources\views/components/dashboard/sidebar/navigation.blade.php ENDPATH**/ ?>

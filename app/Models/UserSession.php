@@ -178,5 +178,10 @@ class UserSession extends Model
         // You can integrate with external services here
         return 'Manila, Philippines'; // Placeholder
     }
+
+public function loginLogs()
+{
+    return $this->hasMany(LoginLog::class);
+}
 }
 

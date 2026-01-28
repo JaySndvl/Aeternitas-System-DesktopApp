@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Ramsey\Uuid\Uuid;
 use App\Helpers\TimezoneHelper;
 
 class Account extends Authenticatable
 {
-    use HasUuids, Notifiable;
+    use HasFactory, Notifiable, HasUuids;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -62,14 +62,22 @@ class Account extends Authenticatable
         return ['id'];
     }
 
-    public function employee(): BelongsTo
+    // Relationship to login logs
+    public function loginLogs()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->hasMany(LoginLog::class, 'account_id');
     }
 
+    // Relationship to employee
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
+    }
+
+    // Get full name
     public function getFullNameAttribute(): string
     {
-        return $this->employee ? $this->employee->full_name : $this->email;
+        return $this->employee ? $this->employee->full_name ?? $this->employee->first_name . ' ' . $this->employee->last_name : $this->email;
     }
 
     public function getDepartmentAttribute()

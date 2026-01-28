@@ -1,8 +1,10 @@
 import axios from 'axios';
+import Alpine from 'alpinejs';
 
 // Set up Axios defaults
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+window.Alpine = Alpine;
 
 // Get CSRF token from meta tag
 const token = document.head.querySelector('meta[name="csrf-token"]');
@@ -11,6 +13,25 @@ if (token) {
 } else {
     console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
+
+// Add notification manager to Alpine store
+Alpine.data('notificationManager', () => ({
+    open: false,
+    notifications: [],
+    unreadCount: 0,
+    loading: false,
+    
+    init() {
+        this.loadNotifications();
+        setInterval(() => {
+            if (!this.open) {
+                this.loadNotifications();
+            }
+        }, 30000);
+    },
+    
+    // ... rest of the functions as above
+}));
 
 // Password toggle functionality
 window.togglePassword = function(fieldName) {
@@ -57,3 +78,6 @@ window.submitFormAjax = function(formElement, successCallback, errorCallback) {
             }
         });
 };
+
+// Start Alpine
+Alpine.start();

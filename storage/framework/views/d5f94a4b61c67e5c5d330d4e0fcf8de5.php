@@ -1,16 +1,12 @@
-{{-- employee/dashboard.blade.php --}}
+<?php $__env->startSection('title', 'Employee Dashboard'); ?>
 
-@extends('layouts.dashboard-base')
-
-@section('title', 'Employee Dashboard')
-
-@php
+<?php
     $user = auth()->user();
     $pageTitle = 'Employee Dashboard';
     $activeRoute = 'dashboard';
-@endphp
+?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <!-- Confirmation Modal -->
 <div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -102,7 +98,7 @@
 
     <!-- Welcome Section -->
     <div class="mb-6 sm:mb-8">
-        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome back, {{ $stats['employee_name'] }}!</h2>
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome back, <?php echo e($stats['employee_name']); ?>!</h2>
         <p class="text-sm sm:text-base text-gray-600">Here's your personal information and payroll history.</p>
     </div>
 
@@ -120,21 +116,21 @@
                     <span class="text-xs font-medium">LIVE</span>
                 </div>
             </div>
-            @if($todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out)
+            <?php if($todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out): ?>
                 <div class="mt-4 pt-4 border-t border-blue-400">
                     <div class="text-lg opacity-90">Working for:</div>
                     <div class="text-2xl font-bold" id="working-time">
-                        @php
+                        <?php
                             $timeIn = \Carbon\Carbon::parse($todayAttendance->time_in);
                             $now = \App\Helpers\TimezoneHelper::now();
                             $diffMinutes = $now->diffInMinutes($timeIn);
                             $hours = floor($diffMinutes / 60);
                             $minutes = $diffMinutes % 60;
                             echo "{$hours}h {$minutes}m";
-                        @endphp
+                        ?>
                     </div>
                 </div>
-            @endif
+            <?php endif; ?>
         </div>
 
         <!-- Time In/Out Actions -->
@@ -170,7 +166,7 @@
             </div>
         </div>
 
-        @if(!$todayAttendance || !$todayAttendance->time_in || $todayAttendance->time_out)
+        <?php if(!$todayAttendance || !$todayAttendance->time_in || $todayAttendance->time_out): ?>
             <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
@@ -186,7 +182,7 @@
                     </div>
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
     </div>
 
     <!-- Personal Info Cards -->
@@ -200,7 +196,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-500">Employee ID</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['employee_id'] }}</p>
+                    <p class="text-2xl font-bold text-gray-900"><?php echo e($stats['employee_id']); ?></p>
                 </div>
             </div>
         </div>
@@ -214,7 +210,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-500">Position</p>
-                    <p class="text-lg font-bold text-gray-900">{{ $stats['position'] }}</p>
+                    <p class="text-lg font-bold text-gray-900"><?php echo e($stats['position']); ?></p>
                 </div>
             </div>
         </div>
@@ -228,7 +224,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-500">Department</p>
-                    <p class="text-lg font-bold text-gray-900">{{ $stats['department'] }}</p>
+                    <p class="text-lg font-bold text-gray-900"><?php echo e($stats['department']); ?></p>
                 </div>
             </div>
         </div>
@@ -245,7 +241,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-500">Monthly Salary</p>
-                    <p class="text-2xl font-bold text-gray-900">₱{{ number_format($stats['salary'], 2) }}</p>
+                    <p class="text-2xl font-bold text-gray-900">₱<?php echo e(number_format($stats['salary'], 2)); ?></p>
                 </div>
             </div>
         </div>
@@ -259,7 +255,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="text-sm font-medium text-gray-500">Hire Date</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $stats['hire_date']->format('M d, Y') }}</p>
+                    <p class="text-2xl font-bold text-gray-900"><?php echo e($stats['hire_date']->format('M d, Y')); ?></p>
                 </div>
             </div>
         </div>
@@ -274,23 +270,23 @@
                 <button class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button>
             </div>
             <div class="space-y-4">
-                @forelse($yearly_summary as $summary)
+                <?php $__empty_1 = true; $__currentLoopData = $yearly_summary; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $summary): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
-                        <p class="text-sm font-medium text-gray-900">{{ $summary->year }}</p>
-                        <p class="text-xs text-gray-500">{{ $summary->payroll_count }} payrolls</p>
+                        <p class="text-sm font-medium text-gray-900"><?php echo e($summary->year); ?></p>
+                        <p class="text-xs text-gray-500"><?php echo e($summary->payroll_count); ?> payrolls</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm font-medium text-gray-900">₱{{ number_format($summary->total_net_pay, 2) }}</p>
+                        <p class="text-sm font-medium text-gray-900">₱<?php echo e(number_format($summary->total_net_pay, 2)); ?></p>
                         <p class="text-xs text-gray-500">Total Net Pay</p>
                     </div>
                 </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <div class="text-center py-8">
                     <i class="fas fa-chart-line text-gray-400 text-4xl mb-4"></i>
                     <p class="text-gray-500">No payroll data available</p>
                 </div>
-                @endforelse
+                <?php endif; ?>
             </div>
         </div>
 
@@ -301,38 +297,38 @@
             </div>
             <div class="space-y-4">
                 <!-- Time In Button -->
-                @if(!$todayAttendance || !$todayAttendance->time_in || $todayAttendance->time_out)
+                <?php if(!$todayAttendance || !$todayAttendance->time_in || $todayAttendance->time_out): ?>
                 <button id="quick-time-in-btn" onclick="confirmTimeIn()" class="w-full flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                     <i class="fas fa-sign-in-alt mr-2"></i>
                     Time In
                 </button>
-                @else
+                <?php else: ?>
                 <button disabled class="w-full flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed">
                     <i class="fas fa-check mr-2"></i>
                     Already Clocked In
                 </button>
-                @endif
+                <?php endif; ?>
 
                 <!-- Time Out Button -->
-                @if($todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out)
+                <?php if($todayAttendance && $todayAttendance->time_in && !$todayAttendance->time_out): ?>
                 <button id="quick-time-out-btn" onclick="confirmTimeOut()" class="w-full flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                     <i class="fas fa-sign-out-alt mr-2"></i>
                     Time Out
                 </button>
-                @elseif($todayAttendance && $todayAttendance->time_out)
+                <?php elseif($todayAttendance && $todayAttendance->time_out): ?>
                 <button disabled class="w-full flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed">
                     <i class="fas fa-check mr-2"></i>
                     Already Clocked Out
                 </button>
-                @else
+                <?php else: ?>
                 <button disabled class="w-full flex items-center justify-center px-4 py-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
                     <i class="fas fa-sign-out-alt mr-2"></i>
                     Time Out (Clock In First)
                 </button>
-                @endif
+                <?php endif; ?>
 
                 <!-- Update Profile Button -->
-                <a href="{{ route('hr.profile') }}" class="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                <a href="<?php echo e(route('hr.profile')); ?>" class="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                     <i class="fas fa-edit mr-2"></i>
                     Update Profile
                 </a>
@@ -367,40 +363,41 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($recent_payrolls as $payroll)
+                    <?php $__empty_1 = true; $__currentLoopData = $recent_payrolls; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $payroll): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div>
-                                <div class="text-sm font-medium text-gray-900">{{ $payroll->pay_period_start->format('M d') }} - {{ $payroll->pay_period_end->format('M d, Y') }}</div>
+                                <div class="text-sm font-medium text-gray-900"><?php echo e($payroll->pay_period_start->format('M d')); ?> - <?php echo e($payroll->pay_period_end->format('M d, Y')); ?></div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format($payroll->gross_pay, 2) }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format($payroll->gross_pay - $payroll->net_pay, 2) }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₱{{ number_format($payroll->net_pay, 2) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱<?php echo e(number_format($payroll->gross_pay, 2)); ?></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱<?php echo e(number_format($payroll->gross_pay - $payroll->net_pay, 2)); ?></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₱<?php echo e(number_format($payroll->net_pay, 2)); ?></td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $payroll->status === 'processed' ? 'bg-green-100 text-green-800' : ($payroll->status === 'paid' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800') }}">
-                                {{ ucfirst($payroll->status) }}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo e($payroll->status === 'processed' ? 'bg-green-100 text-green-800' : ($payroll->status === 'paid' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800')); ?>">
+                                <?php echo e(ucfirst($payroll->status)); ?>
+
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
-                            @if(in_array($payroll->status, ['approved', 'processed', 'paid']))
-                                <button onclick="downloadSinglePayslip('{{ $payroll->id }}')" 
+                            <?php if(in_array($payroll->status, ['approved', 'processed', 'paid'])): ?>
+                                <button onclick="downloadSinglePayslip('<?php echo e($payroll->id); ?>')" 
                                       class="text-blue-600 hover:text-blue-900">
                                     <i class="fas fa-download mr-1"></i> Download
                                 </button>
-                            @else
+                            <?php else: ?>
                                 <span class="text-gray-400">Not available</span>
-                            @endif
+                            <?php endif; ?>
                         </td>
                     </tr>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="6" class="px-6 py-12 text-center">
                             <i class="fas fa-money-bill-wave text-gray-400 text-4xl mb-4"></i>
                             <p class="text-gray-500">No payroll records found</p>
                         </td>
                     </tr>
-                    @endforelse
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
@@ -409,8 +406,8 @@
 
 <!-- Hidden data for JavaScript -->
 <div id="attendance-data"
-     data-today-attendance='{!! json_encode($todayAttendance) !!}'
-     data-recent-activity='{!! json_encode($recentActivity) !!}'
+     data-today-attendance='<?php echo json_encode($todayAttendance); ?>'
+     data-recent-activity='<?php echo json_encode($recentActivity); ?>'
      style="display: none;"></div>
 
 <script>
@@ -611,11 +608,11 @@ async function timeIn() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
 
     try {
-        const response = await fetch('{{ route("attendance.time-in") }}', {
+        const response = await fetch('<?php echo e(route("attendance.time-in")); ?>', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
             }
         });
 
@@ -650,11 +647,11 @@ async function timeOut() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
 
     try {
-        const response = await fetch('{{ route("attendance.time-out") }}', {
+        const response = await fetch('<?php echo e(route("attendance.time-out")); ?>', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
             }
         });
 
@@ -907,4 +904,5 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.dashboard-base', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\Aeternitas-System-V2\resources\views/dashboards/employee.blade.php ENDPATH**/ ?>

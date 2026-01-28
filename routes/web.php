@@ -7,7 +7,7 @@ use App\Http\Controllers\Web\PayrollController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\DocumentController;
-
+use App\Http\Controllers\Web\EmployeeDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,13 +23,19 @@ use App\Http\Controllers\DocumentController;
 // Public routes (only accessible to guests)
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+    // Add 'log.login' middleware to the login POST route
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::get('/notifications/login-logs', [App\Http\Controllers\NotificationController::class, 'getLoginLogs'])
+        ->name('notifications.login-logs');
     
     // Password Reset Routes
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-password', [AuthController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+        Route::get('/hr/login-logs', [App\Http\Controllers\NotificationController::class, 'index'])
+        ->name('hr.login-logs')
+        ->middleware('role:admin,hr,manager');
 });
 
 // Protected routes
@@ -344,5 +350,17 @@ Route::get('/debug-current-payrolls', function() {
     // Employee documents page
     Route::get('/employees/{id}/documents', [EmployeeController::class, 'documents'])->name('employees.documents');
 });
+
+// Employee Dashboard Routes
+Route::middleware(['auth', 'verified'])->prefix('employee')->name('employee.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [EmployeeDashboardController::class, 'index'])->name('dashboard');
     
+    // Payslip downloads - MAKE SURE THESE ROUTES ARE DEFINED
+    Route::get('/payslip/download/{payrollId}', [EmployeeDashboardController::class, 'downloadPayslip'])->name('payslip.download');
+    Route::get('/test-download/{payrollId}', [EmployeeDashboardController::class, 'testDownload'])->name('test.download');
+    
+    // Dashboard data
+    Route::get('/dashboard/data', [EmployeeDashboardController::class, 'getDashboardData'])->name('dashboard.data');
+});
 });
