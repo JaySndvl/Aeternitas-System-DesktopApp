@@ -10,36 +10,47 @@ return new class extends Migration
 {
     public function up()
     {
-        // Step 1: Remove auto-increment from id
-        DB::statement('ALTER TABLE positions MODIFY id BIGINT NOT NULL');
+        // 1. Drop foreign key constraints in referencing tables (employees)
+        Schema::table('employees', function (Blueprint $table) {
+            $table->dropForeign(['position_id']);
+        });
 
-        // Step 2: Drop primary key
-        DB::statement('ALTER TABLE positions DROP PRIMARY KEY');
-
-        // Step 3: Add uuid column
+        // 2. Add a temporary uuid column to positions
         Schema::table('positions', function (Blueprint $table) {
             $table->uuid('uuid')->nullable()->after('id');
         });
 
-        // Step 4: Populate uuid column for all existing rows
+        // 3. Populate uuid column for all existing rows
         $positions = DB::table('positions')->get();
         foreach ($positions as $position) {
-            DB::table('positions')
-                ->where('id', $position->id)
-                ->update(['uuid' => (string) Str::uuid()]);
+            $uuid = (string) Str::uuid();
+            DB::table('positions')->where('id', $position->id)->update(['uuid' => $uuid]);
+
+            // 4. Update referencing tables with new uuid
+            DB::table('employees')->where('position_id', $position->id)->update(['position_id' => $uuid]);
         }
 
-        // Step 5: Make uuid the new primary key
-        DB::statement('ALTER TABLE positions ADD PRIMARY KEY (uuid)');
-
-        // Step 6: Drop old id column
-        Schema::table('positions', function (Blueprint $table) {
-            $table->dropColumn('id');
+        // 5. Change position_id column type in referencing tables
+        Schema::table('employees', function (Blueprint $table) {
+            $table->uuid('position_id')->change();
         });
 
-        // Step 7: Rename uuid to id
+        // 6. Remove auto-increment from id and drop primary key
+        DB::statement('ALTER TABLE positions MODIFY id BIGINT NOT NULL');
+        DB::statement('ALTER TABLE positions DROP PRIMARY KEY');
+
+        // 7. Make uuid the new primary key
+        DB::statement('ALTER TABLE positions ADD PRIMARY KEY (uuid)');
+
+        // 8. Drop old id column and rename uuid to id
         Schema::table('positions', function (Blueprint $table) {
+            $table->dropColumn('id');
             $table->renameColumn('uuid', 'id');
+        });
+
+        // 9. Recreate foreign key constraints
+        Schema::table('employees', function (Blueprint $table) {
+            $table->foreign('position_id')->references('id')->on('positions')->onDelete('set null');
         });
     }
 
