@@ -10,6 +10,45 @@ use Illuminate\Support\Facades\Auth;
 class HrContactController extends Controller
 {
     /**
+     * Quick inbox payload for header dropdown (HR/Admin only)
+     */
+    public function quickInbox()
+    {
+        $user = Auth::user();
+
+        if (!in_array(strtolower($user->role), ['hr', 'admin', 'administrator'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $messages = HrContact::with(['user', 'employee'])
+            ->whereIn('status', ['pending', 'in_progress'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($message) {
+                return [
+                    'id' => $message->id,
+                    'sender_name' => $message->employee
+                        ? trim(($message->employee->first_name ?? '') . ' ' . ($message->employee->last_name ?? ''))
+                        : ($message->user->full_name ?? $message->user->email ?? 'Unknown'),
+                    'subject' => $message->subject,
+                    'status' => $message->status,
+                    'status_label' => ucfirst(str_replace('_', ' ', $message->status)),
+                    'category' => $message->category,
+                    'category_label' => ucfirst($message->category),
+                    'time_ago' => $message->created_at->diffForHumans(),
+                ];
+            });
+
+        $pendingCount = HrContact::where('status', 'pending')->count();
+
+        return response()->json([
+            'messages' => $messages,
+            'pending_count' => $pendingCount,
+        ]);
+    }
+
+    /**
      * Show the contact form
      */
     public function index()

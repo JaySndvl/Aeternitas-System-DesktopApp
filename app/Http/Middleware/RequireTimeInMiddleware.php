@@ -41,8 +41,18 @@ class RequireTimeInMiddleware
             return $next($request);
         }
 
-        // Allow access to dashboard, logout, time-in/out routes, and company switching routes regardless of time-in status
-        if ($request->routeIs(['dashboard', 'logout', 'attendance.time-in', 'attendance.time-out', 'companies.switch', 'companies.index'])) {
+        // Allow access to dashboard, logout, time-in/out routes, company switching,
+        // and forgot-time support routes regardless of time-in status
+        if ($request->routeIs([
+            'dashboard',
+            'logout',
+            'attendance.time-in',
+            'attendance.time-out',
+            'companies.switch',
+            'companies.index',
+            'hr.help-support',
+            'hr.help-support-ticket-store',
+        ])) {
             return $next($request);
         }
 

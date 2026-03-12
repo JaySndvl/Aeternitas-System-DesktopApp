@@ -50,6 +50,15 @@ Route::middleware(['auth', 'require.timein'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     // Employee routes
+    Route::get('/employees/bio-zk', [EmployeeController::class, 'bioZk'])->name('employees.bio-zk')->middleware('role:admin,hr');
+    Route::get('/employees/ytd-info', [EmployeeController::class, 'ytdInfo'])->name('employees.ytd-info')->middleware('role:admin,hr');
+    Route::get('/employees/education-training-rating', [EmployeeController::class, 'educationTrainingRating'])->name('employees.education-training-rating')->middleware('role:admin,hr');
+    Route::get('/employees/other-employee-info', [EmployeeController::class, 'otherEmployeeInfo'])->name('employees.other-employee-info')->middleware('role:admin,hr');
+    Route::post('/employees/other-employee-info', [EmployeeController::class, 'saveOtherEmployeeInfo'])->name('employees.other-employee-info.save')->middleware('role:admin,hr');
+    Route::post('/employees/other-employee-info/photo', [EmployeeController::class, 'uploadOtherEmployeePhoto'])->name('employees.other-employee-info.photo')->middleware('role:admin,hr');
+    Route::post('/employees/other-employee-info/photo/clear', [EmployeeController::class, 'clearOtherEmployeePhoto'])->name('employees.other-employee-info.photo.clear')->middleware('role:admin,hr');
+    Route::get('/employees/prev-emp-oth', [EmployeeController::class, 'prevEmpOth'])->name('employees.prev-emp-oth')->middleware('role:admin,hr');
+    Route::post('/employees/prev-emp-oth', [EmployeeController::class, 'savePrevEmpOth'])->name('employees.prev-emp-oth.save')->middleware('role:admin,hr');
     Route::resource('employees', EmployeeController::class);
     Route::get('/employees/{employee}/payroll', [EmployeeController::class, 'payroll'])->name('employees.payroll');
     
@@ -238,6 +247,7 @@ Route::get('/debug-current-payrolls', function() {
         Route::post('/contact/{hrContact}/respond', [App\Http\Controllers\Web\HrContactController::class, 'respond'])->name('contact.respond');
         Route::get('/contacts/admin', [App\Http\Controllers\Web\HrContactController::class, 'admin'])->name('contacts.admin');
         Route::get('/messages', [App\Http\Controllers\Web\HrContactController::class, 'messages'])->name('messages.index');
+        Route::get('/inbox/quick', [App\Http\Controllers\Web\HrContactController::class, 'quickInbox'])->name('inbox.quick');
         
         // Help & Support routes
         Route::get('/help-support', [App\Http\Controllers\Web\HelpSupportController::class, 'index'])->name('help-support');

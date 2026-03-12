@@ -14,6 +14,32 @@ use Carbon\Carbon;
 class ScheduleV2Controller extends Controller
 {
     /**
+     * Default schedule status by date.
+     */
+    private function getDefaultStatusForDate(Carbon $date): string
+    {
+        return $date->isWeekday() ? 'Working' : 'Day Off';
+    }
+
+    /**
+     * Resolve schedule time values with weekday defaults.
+     */
+    private function resolveScheduleTimes(string $status, Carbon $date, ?string $timeIn, ?string $timeOut): array
+    {
+        if (!in_array($status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
+            return [null, null];
+        }
+
+        // Auto-default weekday working schedule to 9:00 AM - 5:00 PM.
+        if ($status === 'Working' && $date->isWeekday()) {
+            $timeIn = $timeIn ?: '09:00';
+            $timeOut = $timeOut ?: '17:00';
+        }
+
+        return [$timeIn, $timeOut];
+    }
+
+    /**
      * Get current filter state from request
      */
     private function getFilterState(Request $request)
@@ -144,6 +170,10 @@ class ScheduleV2Controller extends Controller
     {
         $employeeId = $request->get('employee_id');
         $date = $request->get('date', now()->format('Y-m-d'));
+        $dateCarbon = Carbon::parse($date);
+        $defaultStatus = $this->getDefaultStatusForDate($dateCarbon);
+        $defaultTimeIn = $dateCarbon->isWeekday() ? '09:00' : null;
+        $defaultTimeOut = $dateCarbon->isWeekday() ? '17:00' : null;
 
         $currentCompany = CompanyHelper::getCurrentCompany();
         
@@ -185,7 +215,7 @@ class ScheduleV2Controller extends Controller
         // Get current filter state for back navigation
         $currentFilters = $this->getFilterState($request);
 
-        return view('attendance.schedule-v2.create', compact('employee', 'employees', 'departments', 'date', 'user', 'currentFilters'));
+        return view('attendance.schedule-v2.create', compact('employee', 'employees', 'departments', 'date', 'user', 'currentFilters', 'defaultStatus', 'defaultTimeIn', 'defaultTimeOut'));
     }
 
     /**
@@ -257,16 +287,14 @@ class ScheduleV2Controller extends Controller
             'created_by' => Auth::id(),
         ];
 
-        // Handle time fields based on status
-        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-            // For working, holiday, day off, and leave statuses, use the provided time values
-            $scheduleData['time_in'] = $request->time_in;
-            $scheduleData['time_out'] = $request->time_out;
-        } else {
-            // For non-working statuses (Absent), set time values to null
-            $scheduleData['time_in'] = null;
-            $scheduleData['time_out'] = null;
-        }
+        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+            $request->status,
+            Carbon::parse($request->date),
+            $request->time_in,
+            $request->time_out
+        );
+        $scheduleData['time_in'] = $resolvedTimeIn;
+        $scheduleData['time_out'] = $resolvedTimeOut;
 
         EmployeeSchedule::create($scheduleData);
 
@@ -409,14 +437,14 @@ class ScheduleV2Controller extends Controller
                             'created_by' => Auth::id(),
                         ];
 
-                        // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-                            $scheduleData['time_in'] = $request->time_in;
-                            $scheduleData['time_out'] = $request->time_out;
-                        } else {
-                            $scheduleData['time_in'] = null;
-                            $scheduleData['time_out'] = null;
-                        }
+                        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+                            $request->status,
+                            Carbon::parse($date),
+                            $request->time_in,
+                            $request->time_out
+                        );
+                        $scheduleData['time_in'] = $resolvedTimeIn;
+                        $scheduleData['time_out'] = $resolvedTimeOut;
 
                         EmployeeSchedule::create($scheduleData);
                         $createdCount++;
@@ -467,14 +495,14 @@ class ScheduleV2Controller extends Controller
                             'created_by' => Auth::id(),
                         ];
 
-                        // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-                            $scheduleData['time_in'] = $request->time_in;
-                            $scheduleData['time_out'] = $request->time_out;
-                        } else {
-                            $scheduleData['time_in'] = null;
-                            $scheduleData['time_out'] = null;
-                        }
+                        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+                            $request->status,
+                            Carbon::parse($date),
+                            $request->time_in,
+                            $request->time_out
+                        );
+                        $scheduleData['time_in'] = $resolvedTimeIn;
+                        $scheduleData['time_out'] = $resolvedTimeOut;
 
                         EmployeeSchedule::create($scheduleData);
                         $createdCount++;
@@ -526,14 +554,14 @@ class ScheduleV2Controller extends Controller
                             'created_by' => Auth::id(),
                         ];
 
-                        // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-                            $scheduleData['time_in'] = $request->time_in;
-                            $scheduleData['time_out'] = $request->time_out;
-                        } else {
-                            $scheduleData['time_in'] = null;
-                            $scheduleData['time_out'] = null;
-                        }
+                        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+                            $request->status,
+                            $currentDate,
+                            $request->time_in,
+                            $request->time_out
+                        );
+                        $scheduleData['time_in'] = $resolvedTimeIn;
+                        $scheduleData['time_out'] = $resolvedTimeOut;
 
                         EmployeeSchedule::create($scheduleData);
                         $createdCount++;

@@ -101,6 +101,60 @@
                             <p class="text-xs font-medium text-blue-800">💡 Expected format:</p>
                             <p class="text-xs text-blue-700 mt-1">Employee ID, Date, Time entries (multiple per day)</p>
                         </div>
+
+                        <div class="mt-3 p-3 bg-white border border-blue-200 rounded-lg">
+                            <p class="text-xs font-semibold text-blue-900 mb-2">Proper sequence before submit</p>
+                            <ol class="list-decimal list-inside space-y-1 text-xs text-blue-800">
+                                <li>Use this column order: <strong>Employee ID</strong>, <strong>Employee Name</strong>, <strong>Date</strong>, <strong>IN 1</strong>, <strong>OUT 1</strong>, <strong>IN 2</strong>, <strong>OUT 2</strong>, <strong>IN 3</strong>, <strong>OUT 3</strong>.</li>
+                                <li>First row for each employee must include both <strong>Employee ID</strong> and <strong>Employee Name</strong>.</li>
+                                <li>Next rows for the same employee can leave Employee ID/Name blank, but must have <strong>Date</strong> and time entries.</li>
+                                <li>Employee ID must match the system exactly (example: <code>EMP-0001</code>).</li>
+                                <li>Date formats accepted: <code>MM/DD/YYYY</code>, <code>MM-DD-YYYY</code>, <code>YYYY-MM-DD</code>.</li>
+                                <li>Time formats accepted: <code>08:00</code>, <code>08:00:00</code>, <code>8:00 AM</code>.</li>
+                            </ol>
+
+                            <div class="mt-3 overflow-x-auto">
+                                <table class="min-w-full text-xs border border-blue-200">
+                                    <thead class="bg-blue-50">
+                                        <tr>
+                                            <th class="px-2 py-1 border text-left">Employee ID</th>
+                                            <th class="px-2 py-1 border text-left">Employee Name</th>
+                                            <th class="px-2 py-1 border text-left">Date</th>
+                                            <th class="px-2 py-1 border text-left">IN 1</th>
+                                            <th class="px-2 py-1 border text-left">OUT 1</th>
+                                            <th class="px-2 py-1 border text-left">IN 2</th>
+                                            <th class="px-2 py-1 border text-left">OUT 2</th>
+                                            <th class="px-2 py-1 border text-left">IN 3</th>
+                                            <th class="px-2 py-1 border text-left">OUT 3</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="px-2 py-1 border">EMP-0001</td>
+                                            <td class="px-2 py-1 border">Juan Dela Cruz</td>
+                                            <td class="px-2 py-1 border">03/10/2026</td>
+                                            <td class="px-2 py-1 border">08:00</td>
+                                            <td class="px-2 py-1 border">12:00</td>
+                                            <td class="px-2 py-1 border">13:00</td>
+                                            <td class="px-2 py-1 border">17:00</td>
+                                            <td class="px-2 py-1 border"></td>
+                                            <td class="px-2 py-1 border"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-2 py-1 border"></td>
+                                            <td class="px-2 py-1 border"></td>
+                                            <td class="px-2 py-1 border">03/11/2026</td>
+                                            <td class="px-2 py-1 border">08:05</td>
+                                            <td class="px-2 py-1 border">12:00</td>
+                                            <td class="px-2 py-1 border">13:00</td>
+                                            <td class="px-2 py-1 border">17:10</td>
+                                            <td class="px-2 py-1 border"></td>
+                                            <td class="px-2 py-1 border"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
                     </div>

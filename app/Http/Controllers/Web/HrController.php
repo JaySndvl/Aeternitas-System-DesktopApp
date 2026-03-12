@@ -146,6 +146,7 @@ class HrController extends Controller
     {
         $user = Auth::user();
         $employee = $user->employee;
+        $canEditRestricted = in_array($user->role, ['admin', 'hr']);
 
         $request->validate([
             'first_name' => 'required|string|max:255',
@@ -153,6 +154,14 @@ class HrController extends Controller
             'email' => 'required|email|unique:accounts,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
             'date_of_birth' => 'nullable|date',
+            'civil_status' => 'nullable|string|max:100',
+            'home_address' => 'nullable|string|max:1000',
+            'current_address' => 'nullable|string|max:1000',
+            'mobile_number' => 'nullable|string|max:20',
+            'facebook_link' => 'nullable|url|max:255',
+            'linkedin_link' => 'nullable|url|max:255',
+            'ig_link' => 'nullable|url|max:255',
+            'other_link' => 'nullable|url|max:255',
             'gender' => 'nullable|string|in:Male,Female,Other',
             'address' => 'nullable|string|max:500',
             'position' => 'nullable|string|max:255',
@@ -160,11 +169,22 @@ class HrController extends Controller
             'employment_type' => 'nullable|string|in:Full-time,Part-time,Contract',
             'hire_date' => 'nullable|date',
             'salary' => 'nullable|numeric|min:0',
+            'loan_start_date' => 'nullable|date',
+            'loan_end_date' => 'nullable|date|after_or_equal:loan_start_date',
+            'loan_total_amount' => 'nullable|numeric|min:0',
+            'loan_monthly_amortization' => 'nullable|numeric|min:0',
             'job_description' => 'nullable|string|max:1000',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_relationship' => 'nullable|string|max:100',
             'emergency_contact_phone' => 'nullable|string|max:20',
             'emergency_contact_email' => 'nullable|email|max:255',
+            'emergency_full_name' => 'nullable|string|max:255',
+            'emergency_relationship' => 'nullable|string|max:100',
+            'emergency_home_address' => 'nullable|string|max:1000',
+            'emergency_current_address' => 'nullable|string|max:1000',
+            'emergency_mobile_number' => 'nullable|string|max:20',
+            'emergency_email' => 'nullable|email|max:255',
+            'emergency_facebook_link' => 'nullable|url|max:255',
         ]);
 
         // Update account
@@ -185,20 +205,45 @@ class HrController extends Controller
                 $updateData['phone'] = $request->phone;
             }
             
-            if ($request->filled('department_id')) {
-                $updateData['department_id'] = $request->department_id;
+            if ($canEditRestricted) {
+                if ($request->filled('department_id')) {
+                    $updateData['department_id'] = $request->department_id;
+                }
+
+                if ($request->filled('position')) {
+                    $updateData['position'] = $request->position;
+                }
+
+                if ($request->filled('salary')) {
+                    $updateData['salary'] = $request->salary;
+                }
+
+                if ($request->filled('hire_date')) {
+                    $updateData['hire_date'] = $request->hire_date;
+                }
             }
-            
-            if ($request->filled('position')) {
-                $updateData['position'] = $request->position;
-            }
-            
-            if ($request->filled('salary')) {
-                $updateData['salary'] = $request->salary;
-            }
-            
-            if ($request->filled('hire_date')) {
-                $updateData['hire_date'] = $request->hire_date;
+
+            $updateData['date_of_birth'] = $request->date_of_birth ?: null;
+            $updateData['civil_status'] = $request->civil_status ?: null;
+            $updateData['home_address'] = $request->home_address ?: null;
+            $updateData['current_address'] = $request->current_address ?: null;
+            $updateData['mobile_number'] = $request->mobile_number ?: null;
+            $updateData['facebook_link'] = $request->facebook_link ?: null;
+            $updateData['linkedin_link'] = $request->linkedin_link ?: null;
+            $updateData['ig_link'] = $request->ig_link ?: null;
+            $updateData['other_link'] = $request->other_link ?: null;
+            $updateData['emergency_full_name'] = $request->emergency_full_name ?: null;
+            $updateData['emergency_relationship'] = $request->emergency_relationship ?: null;
+            $updateData['emergency_home_address'] = $request->emergency_home_address ?: null;
+            $updateData['emergency_current_address'] = $request->emergency_current_address ?: null;
+            $updateData['emergency_mobile_number'] = $request->emergency_mobile_number ?: null;
+            $updateData['emergency_email'] = $request->emergency_email ?: null;
+            $updateData['emergency_facebook_link'] = $request->emergency_facebook_link ?: null;
+            if ($canEditRestricted) {
+                $updateData['loan_start_date'] = $request->loan_start_date ?: null;
+                $updateData['loan_end_date'] = $request->loan_end_date ?: null;
+                $updateData['loan_total_amount'] = $request->loan_total_amount;
+                $updateData['loan_monthly_amortization'] = $request->loan_monthly_amortization;
             }
             
             $employee->update($updateData);

@@ -40,7 +40,7 @@
 </div>
 
 <script>
-// Only define functions once
+
 if (typeof window.showConfirmationModal === 'undefined') {
     console.log('[Modal Component] Defining showConfirmationModal function');
     

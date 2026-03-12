@@ -334,7 +334,7 @@
                 async loadMessages() {
                     this.loading = true;
                     try {
-                        const response = await fetch('/api/hr/inbox', {
+                        const response = await fetch('{{ route('hr.inbox.quick') }}', {
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             }

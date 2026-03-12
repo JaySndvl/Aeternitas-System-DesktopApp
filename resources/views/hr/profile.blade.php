@@ -83,6 +83,7 @@
         </div>
 
         <!-- Main Content -->
+        @php($canEditRestricted = in_array($user->role, ['admin', 'hr']))
         <div class="lg:col-span-2 space-y-6">
             <!-- Personal Information -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -128,9 +129,17 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                                <input type="date" name="date_of_birth" 
+                                <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $employee?->date_of_birth?->format('Y-m-d')) }}"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('date_of_birth')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Employee's Civil Status</label>
+                                <input type="text" name="civil_status" value="{{ old('civil_status', $employee?->civil_status) }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('civil_status')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -146,6 +155,62 @@
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Employee's Mobile Number</label>
+                                <input type="text" name="mobile_number" value="{{ old('mobile_number', $employee?->mobile_number) }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('mobile_number')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Facebook Link</label>
+                                <input type="url" name="facebook_link" value="{{ old('facebook_link', $employee?->facebook_link) }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('facebook_link')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">LinkedIn Link</label>
+                                <input type="url" name="linkedin_link" value="{{ old('linkedin_link', $employee?->linkedin_link) }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('linkedin_link')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">IG Link</label>
+                                <input type="url" name="ig_link" value="{{ old('ig_link', $employee?->ig_link) }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('ig_link')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Others Link</label>
+                                <input type="url" name="other_link" value="{{ old('other_link', $employee?->other_link) }}"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                @error('other_link')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Employee's Home Address</label>
+                            <textarea name="home_address" rows="3" placeholder="Enter home address" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('home_address', $employee?->home_address) }}</textarea>
+                            @error('home_address')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Employee's Current Address</label>
+                            <textarea name="current_address" rows="3" placeholder="Enter current address" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('current_address', $employee?->current_address) }}</textarea>
+                            @error('current_address')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
@@ -165,6 +230,11 @@
                     <h3 class="text-lg font-semibold text-gray-900">Professional Information</h3>
                 </div>
                 <div class="p-6">
+                    @unless($canEditRestricted)
+                        <div class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                            Only Admin/HR can edit Professional Information.
+                        </div>
+                    @endunless
                     <form method="POST" action="{{ route('hr.profile.update') }}" class="space-y-6">
                         @csrf
                         @method('PUT')
@@ -176,7 +246,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Position</label>
-                                <input type="text" name="position" value="{{ $employee?->position ?? '' }}" 
+                                <input type="text" name="position" value="{{ $employee?->position ?? '' }}" {{ $canEditRestricted ? '' : 'readonly' }}
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('position')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -184,7 +254,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                                <select name="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <select name="department_id" {{ $canEditRestricted ? '' : 'disabled' }} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select Department</option>
                                     @foreach($departments as $department)
                                         <option value="{{ $department->id }}" 
@@ -199,7 +269,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
-                                <select name="employment_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <select name="employment_type" {{ $canEditRestricted ? '' : 'disabled' }} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select Type</option>
                                     <option value="Full-time">Full-time</option>
                                     <option value="Part-time">Part-time</option>
@@ -211,7 +281,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Hire Date</label>
-                                <input type="date" name="hire_date" value="{{ $employee && $employee->hire_date ? $employee->hire_date->format('Y-m-d') : '' }}" 
+                                <input type="date" name="hire_date" value="{{ $employee && $employee->hire_date ? $employee->hire_date->format('Y-m-d') : '' }}" {{ $canEditRestricted ? '' : 'readonly' }}
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('hire_date')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -219,7 +289,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Salary</label>
-                                <input type="number" name="salary" value="{{ $employee?->salary ?? '' }}" step="0.01" 
+                                <input type="number" name="salary" value="{{ $employee?->salary ?? '' }}" step="0.01" {{ $canEditRestricted ? '' : 'readonly' }}
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('salary')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -228,7 +298,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
-                            <textarea name="job_description" rows="4" placeholder="Describe your role and responsibilities" 
+                            <textarea name="job_description" rows="4" placeholder="Describe your role and responsibilities" {{ $canEditRestricted ? '' : 'readonly' }}
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
                             @error('job_description')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -244,36 +314,81 @@
                     <h3 class="text-lg font-semibold text-gray-900">Emergency Contact</h3>
                 </div>
                 <div class="p-6">
-                    <form class="space-y-6">
+                    <form class="space-y-6" id="emergency-form" onsubmit="return false;">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Contact Name</label>
-                                <input type="text" placeholder="Full name" 
+                                <input type="text" name="emergency_full_name" form="profile-form" value="{{ old('emergency_full_name', $employee?->emergency_full_name) }}" placeholder="Full name" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
-                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option>Select Relationship</option>
-                                    <option>Spouse</option>
-                                    <option>Parent</option>
-                                    <option>Sibling</option>
-                                    <option>Child</option>
-                                    <option>Other</option>
-                                </select>
+                                <input type="text" name="emergency_relationship" form="profile-form" value="{{ old('emergency_relationship', $employee?->emergency_relationship) }}" placeholder="Relationship"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Home Address</label>
+                                <input type="text" name="emergency_home_address" form="profile-form" value="{{ old('emergency_home_address', $employee?->emergency_home_address) }}" placeholder="Home address"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Address</label>
+                                <input type="text" name="emergency_current_address" form="profile-form" value="{{ old('emergency_current_address', $employee?->emergency_current_address) }}" placeholder="Current address"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                                <input type="tel" placeholder="+63 912 345 6789" 
+                                <input type="tel" name="emergency_mobile_number" form="profile-form" value="{{ old('emergency_mobile_number', $employee?->emergency_mobile_number) }}" placeholder="+63 912 345 6789" 
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                <input type="email" placeholder="contact@example.com" 
+                                <input type="email" name="emergency_email" form="profile-form" value="{{ old('emergency_email', $employee?->emergency_email) }}" placeholder="contact@example.com" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Facebook Link</label>
+                                <input type="url" name="emergency_facebook_link" form="profile-form" value="{{ old('emergency_facebook_link', $employee?->emergency_facebook_link) }}" placeholder="https://facebook.com/..."
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Employee Loans -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Employee Loans</h3>
+                </div>
+                <div class="p-6">
+                    @unless($canEditRestricted)
+                        <div class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+                            Only Admin/HR can edit Employee Loans.
+                        </div>
+                    @endunless
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="date" name="loan_start_date" form="profile-form" value="{{ old('loan_start_date', $employee?->loan_start_date?->format('Y-m-d')) }}" {{ $canEditRestricted ? '' : 'readonly' }}
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" name="loan_end_date" form="profile-form" value="{{ old('loan_end_date', $employee?->loan_end_date?->format('Y-m-d')) }}" {{ $canEditRestricted ? '' : 'readonly' }}
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Total Amount</label>
+                            <input type="number" step="0.01" min="0" name="loan_total_amount" form="profile-form" value="{{ old('loan_total_amount', $employee?->loan_total_amount) }}" {{ $canEditRestricted ? '' : 'readonly' }}
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Amortization</label>
+                            <input type="number" step="0.01" min="0" name="loan_monthly_amortization" form="profile-form" value="{{ old('loan_monthly_amortization', $employee?->loan_monthly_amortization) }}" {{ $canEditRestricted ? '' : 'readonly' }}
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
                 </div>
             </div>
 

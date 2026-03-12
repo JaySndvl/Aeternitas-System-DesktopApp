@@ -258,10 +258,21 @@
                                                 </div>
                                             </div>
                                         @else
-                                            <div class="text-gray-400 text-xs">
-                                                <a href="{{ route('schedule-v2.create', array_merge(['employee_id' => $employee->id, 'date' => $day['date']->format('Y-m-d')], array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery]))) }}" class="hover:text-blue-600">
-                                                    <i class="fas fa-plus"></i>
-                                                </a>
+                                            @php
+                                                $isWeekday = $day['date']->isWeekday();
+                                            @endphp
+                                            <div class="inline-block">
+                                                <div class="text-xs font-medium {{ $isWeekday ? 'text-green-700' : 'text-yellow-700' }} mb-1">
+                                                    {{ $isWeekday ? 'Working' : 'Day Off' }}
+                                                </div>
+                                                <div class="text-xs text-gray-600">
+                                                    {{ $isWeekday ? '09:00-17:00' : '-' }}
+                                                </div>
+                                                <div class="mt-1">
+                                                    <a href="{{ route('schedule-v2.create', array_merge(['employee_id' => $employee->id, 'date' => $day['date']->format('Y-m-d')], array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery]))) }}" class="text-blue-600 hover:text-blue-900 text-xs" title="Create or customize schedule">
+                                                        <i class="fas fa-pen"></i>
+                                                    </a>
+                                                </div>
                                             </div>
                                         @endif
                                     </td>

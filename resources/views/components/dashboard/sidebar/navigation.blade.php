@@ -21,17 +21,58 @@
         </a>
         
         @if($user->role === 'admin' || $user->role === 'hr')
-        <!-- Employees -->
+        <!-- Employees Dropdown -->
         @php
             $employeeCount = $currentCompany 
                 ? \App\Models\Employee::forCompany($currentCompany->id)->count() 
                 : \App\Models\Employee::count();
         @endphp
-        <a href="{{ route('employees.index') }}" class="flex items-center px-4 py-3 text-sm font-medium {{ $activeRoute === 'employees.index' ? 'text-blue-600 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600' }} rounded-lg transition-all duration-200 group">
-            <i class="fas fa-users mr-3 text-lg {{ $activeRoute === 'employees.index' ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600' }}"></i>
-            <span>Employees</span>
-            <span class="ml-auto bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">{{ $employeeCount }}</span>
-        </a>
+        <div class="relative group">
+            <button id="employeeMenuBtn" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+                <i class="fas fa-users mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
+                <span>Employees</span>
+                <i class="fas fa-chevron-down ml-auto text-xs text-gray-400 group-hover:text-blue-600 transition-transform duration-200" id="employeeChevron"></i>
+                <span class="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">{{ $employeeCount }}</span>
+            </button>
+
+            <!-- Employees Dropdown Menu -->
+            <div id="employeeSubMenu" class="hidden absolute left-0 mt-0 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-2">
+                <a href="{{ route('employees.index') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-list mr-3 text-gray-400"></i>
+                    <span>Employee List</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-id-card mr-3 text-gray-400"></i>
+                    <span>Employee Info</span>
+                </a>
+                <a href="{{ route('employees.other-employee-info') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.other-employee-info' ? 'bg-blue-50 text-blue-600' : '' }}">
+                    <i class="fas fa-user-circle mr-3 text-gray-400"></i>
+                    <span>Other Employee Info</span>
+                </a>
+                <a href="{{ route('employees.education-training-rating') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.education-training-rating' ? 'bg-blue-50 text-blue-600' : '' }}">
+                    <i class="fas fa-book mr-3 text-gray-400"></i>
+                    <span>Education/Training/Rating</span>
+                </a>
+                <a href="{{ route('employees.prev-emp-oth') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.prev-emp-oth' ? 'bg-blue-50 text-blue-600' : '' }}">
+                    <i class="fas fa-briefcase mr-3 text-gray-400"></i>
+                    <span>Previous Employer & Other</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-file-alt mr-3 text-gray-400"></i>
+                    <span>Documents</span>
+                </a>
+                <a href="{{ route('employees.ytd-info') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.ytd-info' ? 'bg-blue-50 text-blue-600' : '' }}">
+                    <i class="fas fa-passport mr-3 text-gray-400"></i>
+                    <span>YTD - INFO</span>
+                </a>
+                <a href="{{ route('employees.bio-zk') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.bio-zk' ? 'bg-blue-50 text-blue-600' : '' }}">
+                    <i class="fas fa-dna mr-3 text-gray-400"></i>
+                    <span>Bio ZK</span>
+                </a>
+            </div>
+        </div>
         
         <!-- Departments -->
         @php
@@ -190,6 +231,130 @@
                 </a>
                 
                 @if($user->role === 'admin' || $user->role === 'hr')
+                <!-- Timekeeping and HRIS Reports -->
+                <div class="border-t border-gray-200 my-2"></div>
+                <div class="relative group">
+                    <button class="timekeepingReportBtn w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group">
+                        <i class="fas fa-file-chart mr-3 text-sm text-gray-400 group-hover:text-blue-600"></i>
+                        <span>Timekeeping & HRIS Reports</span>
+                        <i class="fas fa-chevron-right ml-auto text-xs text-gray-400 group-hover:text-blue-600"></i>
+                    </button>
+                    
+                    <!-- Timekeeping Reports Submenu -->
+                    <div class="timekeepingReportSubMenu hidden absolute left-full top-0 ml-0 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-2 max-h-96 overflow-y-auto">
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-hourglass-half mr-3 text-gray-400"></i>
+                            <span>Time Summary</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-id-card mr-3 text-gray-400"></i>
+                            <span>Time Card</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-list mr-3 text-gray-400"></i>
+                            <span>Time Sheets</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-user-slash mr-3 text-gray-400"></i>
+                            <span>Absences</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-exclamation-triangle mr-3 text-gray-400"></i>
+                            <span>Undertime & Tardiness</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-chart-line mr-3 text-gray-400"></i>
+                            <span>Overtime Report</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-users mr-3 text-gray-400"></i>
+                            <span>Employee Reports</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-calendar-check mr-3 text-gray-400"></i>
+                            <span>Balance of Leaves</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-file-contract mr-3 text-gray-400"></i>
+                            <span>Employee Filings</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-birthday-cake mr-3 text-gray-400"></i>
+                            <span>Birthdays per Month</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-user-plus mr-3 text-gray-400"></i>
+                            <span>New Employees</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-hourglass-end mr-3 text-gray-400"></i>
+                            <span>End of Contracts</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-star mr-3 text-gray-400"></i>
+                            <span>Perfect Attendance</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-barcode mr-3 text-gray-400"></i>
+                            <span>ID with Barcode</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-chart-star mr-3 text-gray-400"></i>
+                            <span>Performance Evaluation</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-certificate mr-3 text-gray-400"></i>
+                            <span>Employment Certificates</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-gavel mr-3 text-gray-400"></i>
+                            <span>Employee Offences</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-globe mr-3 text-gray-400"></i>
+                            <span>Print HRIS Web Groups</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-shuttle-van mr-3 text-gray-400"></i>
+                            <span>Shuttle List</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-sync mr-3 text-gray-400"></i>
+                            <span>Generated Time Summary</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-print mr-3 text-gray-400"></i>
+                            <span>Print Training</span>
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                            <i class="fas fa-people-arrows mr-3 text-gray-400"></i>
+                            <span>Print Manpower Movement</span>
+                        </a>
+                    </div>
+                </div>
+                
                 <!-- Attendance Reports -->
                 <div class="border-t border-gray-200 my-2"></div>
                 <a href="{{ route('attendance.reports') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-white hover:text-blue-600 rounded-md transition-all duration-200 group {{ $activeRoute === 'attendance.reports' ? 'bg-white text-blue-600' : '' }}">
@@ -214,11 +379,101 @@
             <span class="ml-auto bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">New</span>
         </a>
         
-        <!-- Reports -->
-        <a href="{{ route('attendance.reports') }}" class="flex items-center px-4 py-3 text-sm font-medium {{ $activeRoute === 'attendance.reports' ? 'text-blue-600 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600' }} rounded-lg transition-all duration-200 group">
-            <i class="fas fa-chart-bar mr-3 text-lg {{ $activeRoute === 'attendance.reports' ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600' }}"></i>
-            <span>Reports</span>
-        </a>
+        <!-- Reports Dropdown -->
+        <div class="relative group">
+            <button id="reportMenuBtn" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+                <i class="fas fa-chart-bar mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
+                <span>Reports</span>
+                <i class="fas fa-chevron-down ml-auto text-xs text-gray-400 group-hover:text-blue-600 transition-transform duration-200" id="reportChevron"></i>
+            </button>
+
+            <!-- Reports Dropdown Menu -->
+            <div id="reportSubMenu" class="hidden absolute left-0 mt-0 w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-2 max-h-96 overflow-y-auto">
+                <a href="{{ route('attendance.reports') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-hourglass-half mr-3 text-gray-400"></i>
+                    <span>Time Summary</span>
+                </a>
+                <a href="{{ route('payroll.index') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-calculator mr-3 text-gray-400"></i>
+                    <span>Payroll Summary</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-receipt mr-3 text-gray-400"></i>
+                    <span>Payslips</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-university mr-3 text-gray-400"></i>
+                    <span>Bank Remittance</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-coins mr-3 text-gray-400"></i>
+                    <span>Denominations</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-list mr-3 text-gray-400"></i>
+                    <span>Received List</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-gift mr-3 text-gray-400"></i>
+                    <span>Allowances</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-star mr-3 text-gray-400"></i>
+                    <span>Allowance Special Report</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-piggy-bank mr-3 text-gray-400"></i>
+                    <span>Loan Balances</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-book mr-3 text-gray-400"></i>
+                    <span>Deduction Register</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-file-pdf mr-3 text-gray-400"></i>
+                    <span>SSS Report</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-heartbeat mr-3 text-gray-400"></i>
+                    <span>Philhealth Report & RF-1</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-percent mr-3 text-gray-400"></i>
+                    <span>Tax Report</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-shield-alt mr-3 text-gray-400"></i>
+                    <span>Pag Ibig Report</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-ledger mr-3 text-gray-400"></i>
+                    <span>Account Entries</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-file-alt mr-3 text-gray-400"></i>
+                    <span>Text File Reports</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                    <i class="fas fa-print mr-3 text-gray-400"></i>
+                    <span>Print Undeducted Items</span>
+                </a>
+            </div>
+        </div>
         @endif
         
         @if($user->role === 'admin')
@@ -540,4 +795,96 @@ function showError(message) {
     // Fallback: alert
     alert('Error: ' + message);
 }
+
+// Employee Menu Dropdown Handler
+document.addEventListener('DOMContentLoaded', function() {
+    const employeeMenuBtn = document.getElementById('employeeMenuBtn');
+    const employeeSubMenu = document.getElementById('employeeSubMenu');
+    const employeeChevron = document.getElementById('employeeChevron');
+    
+    if (employeeMenuBtn && employeeSubMenu) {
+        // Toggle menu on button click
+        employeeMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            employeeSubMenu.classList.toggle('hidden');
+            employeeChevron.style.transform = employeeSubMenu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!employeeMenuBtn.contains(e.target) && !employeeSubMenu.contains(e.target)) {
+                employeeSubMenu.classList.add('hidden');
+                employeeChevron.style.transform = 'rotate(0deg)';
+            }
+        });
+        
+        // Close menu when clicking on a submenu item
+        const submenuItems = employeeSubMenu.querySelectorAll('a');
+        submenuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                employeeSubMenu.classList.add('hidden');
+                employeeChevron.style.transform = 'rotate(0deg)';
+            });
+        });
+    }
+
+    // Report Menu Dropdown Handler
+    const reportMenuBtn = document.getElementById('reportMenuBtn');
+    const reportSubMenu = document.getElementById('reportSubMenu');
+    const reportChevron = document.getElementById('reportChevron');
+    
+    if (reportMenuBtn && reportSubMenu) {
+        // Toggle menu on button click
+        reportMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            reportSubMenu.classList.toggle('hidden');
+            reportChevron.style.transform = reportSubMenu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!reportMenuBtn.contains(e.target) && !reportSubMenu.contains(e.target)) {
+                reportSubMenu.classList.add('hidden');
+                reportChevron.style.transform = 'rotate(0deg)';
+            }
+        });
+        
+        // Close menu when clicking on a submenu item
+        const reportSubmenuItems = reportSubMenu.querySelectorAll('a');
+        reportSubmenuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                reportSubMenu.classList.add('hidden');
+                reportChevron.style.transform = 'rotate(0deg)';
+            });
+        });
+    }
+
+    // Timekeeping and HRIS Reports Submenu Handler
+    const timekeepingBtns = document.querySelectorAll('.timekeepingReportBtn');
+    timekeepingBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const submenu = this.closest('.group').querySelector('.timekeepingReportSubMenu');
+            if (submenu) {
+                submenu.classList.toggle('hidden');
+            }
+        });
+
+        // Show submenu on hover
+        btn.parentElement.addEventListener('mouseenter', function() {
+            const submenu = this.querySelector('.timekeepingReportSubMenu');
+            if (submenu) {
+                submenu.classList.remove('hidden');
+            }
+        });
+
+        // Hide submenu on mouse leave
+        btn.parentElement.addEventListener('mouseleave', function() {
+            const submenu = this.querySelector('.timekeepingReportSubMenu');
+            if (submenu) {
+                submenu.classList.add('hidden');
+            }
+        });
+    });
+});
 </script>

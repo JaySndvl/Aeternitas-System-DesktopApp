@@ -39,6 +39,45 @@
     </div>
 </div>
 
+<!-- Forgot Time In/Out Modal -->
+<div id="forgot-time-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div class="mt-1">
+            <div class="flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mx-auto mb-4">
+                <i class="fas fa-clock text-yellow-700 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 text-center mb-1">Forgot to time in / out?</h3>
+            <p class="text-sm text-gray-500 text-center mb-5">Please confirm what you forgot and provide your reason.</p>
+
+            <form id="forgot-time-form" method="POST" action="{{ route('hr.help-support-ticket-store') }}" class="space-y-4">
+                @csrf
+                <input type="hidden" name="subject" id="forgot-subject">
+                <input type="hidden" name="category" value="attendance">
+                <input type="hidden" name="message" id="forgot-message">
+
+                <div>
+                    <label for="forgot-type" class="block text-sm font-medium text-gray-700 mb-2">What did you forget?</label>
+                    <select id="forgot-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" required>
+                        <option value="">Select an option</option>
+                        <option value="time in">I forgot to Time In</option>
+                        <option value="time out">I forgot to Time Out</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="forgot-reason" class="block text-sm font-medium text-gray-700 mb-2">Reason</label>
+                    <textarea id="forgot-reason" rows="4" placeholder="Please explain why you forgot..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500" required></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeForgotTimeModal()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Immediate clock start script -->
 <script>
 // Start clock immediately when this script loads
@@ -336,6 +375,12 @@
                     <i class="fas fa-edit mr-2"></i>
                     Update Profile
                 </a>
+
+                <!-- Forgot Time In/Out Button -->
+                <button type="button" onclick="openForgotTimeModal()" class="w-full flex items-center justify-center px-4 py-3 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-colors">
+                    <i class="fas fa-clock mr-2"></i>
+                    Forgot to time in / out?
+                </button>
                 
                 <!-- Contact HR Button -->
                 <button class="w-full flex items-center justify-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
@@ -481,6 +526,23 @@ function hideConfirmationModal() {
     modal.classList.remove('block');
     modal.classList.add('hidden');
     pendingAction = null;
+}
+
+// ============================================================
+// FORGOT TIME IN/OUT MODAL FUNCTIONS
+// ============================================================
+function openForgotTimeModal() {
+    const modal = document.getElementById('forgot-time-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('block');
+}
+
+function closeForgotTimeModal() {
+    const modal = document.getElementById('forgot-time-modal');
+    if (!modal) return;
+    modal.classList.remove('block');
+    modal.classList.add('hidden');
 }
 
 // Initialize modal event listeners
@@ -905,6 +967,47 @@ document.addEventListener('DOMContentLoaded', function() {
             hideLoadingOverlay();
         }
     });
+
+    // Handle Forgot Time form submission
+    const forgotForm = document.getElementById('forgot-time-form');
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', function(event) {
+            const forgotType = document.getElementById('forgot-type');
+            const forgotReason = document.getElementById('forgot-reason');
+            const subjectField = document.getElementById('forgot-subject');
+            const messageField = document.getElementById('forgot-message');
+
+            if (!forgotType.value || !forgotReason.value.trim()) {
+                event.preventDefault();
+                showError('Please select what you forgot and provide your reason.');
+                return;
+            }
+
+            const typeLabel = forgotType.value;
+            const submittedAtPh = new Date().toLocaleString('en-PH', {
+                timeZone: 'Asia/Manila',
+                year: 'numeric',
+                month: 'long',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+            });
+            subjectField.value = `Forgot to ${typeLabel}`;
+            messageField.value = `I forgot to ${typeLabel}.\n\nReason: ${forgotReason.value.trim()}\n\nSubmitted at (PH Time): ${submittedAtPh}`;
+        });
+    }
+
+    // Close forgot-time modal when clicking outside
+    const forgotModal = document.getElementById('forgot-time-modal');
+    if (forgotModal) {
+        forgotModal.addEventListener('click', function(event) {
+            if (event.target === forgotModal) {
+                closeForgotTimeModal();
+            }
+        });
+    }
 });
 </script>
 @endsection

@@ -28,6 +28,26 @@ class Employee extends Model
         'salary',
         'hire_date',
         'company_id',
+        'date_of_birth',
+        'civil_status',
+        'home_address',
+        'current_address',
+        'mobile_number',
+        'facebook_link',
+        'linkedin_link',
+        'ig_link',
+        'other_link',
+        'emergency_full_name',
+        'emergency_relationship',
+        'emergency_home_address',
+        'emergency_current_address',
+        'emergency_mobile_number',
+        'emergency_email',
+        'emergency_facebook_link',
+        'loan_start_date',
+        'loan_end_date',
+        'loan_total_amount',
+        'loan_monthly_amortization',
     ];
     public function position(): BelongsTo
     {
@@ -42,6 +62,11 @@ class Employee extends Model
     protected $casts = [
         'salary' => 'decimal:2',
         'hire_date' => 'date',
+        'date_of_birth' => 'date',
+        'loan_start_date' => 'date',
+        'loan_end_date' => 'date',
+        'loan_total_amount' => 'decimal:2',
+        'loan_monthly_amortization' => 'decimal:2',
     ];
 
     // Add these to expose the computed attributes
@@ -135,6 +160,16 @@ class Employee extends Model
     public function leaveBalances(): HasMany
     {
         return $this->hasMany(LeaveBalance::class);
+    }
+
+    public function previousEmployments(): HasMany
+    {
+        return $this->hasMany(PreviousEmployment::class)->orderBy('sequence');
+    }
+
+    public function otherInfo(): HasOne
+    {
+        return $this->hasOne(EmployeeOtherInfo::class);
     }
 
     /**

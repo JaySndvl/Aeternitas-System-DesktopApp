@@ -148,13 +148,13 @@
                                     </label>
                                     <select name="status" id="status" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('status') border-red-500 @enderror">
                                         <option value="">Select status</option>
-                                        <option value="Working" {{ old('status') == 'Working' ? 'selected' : '' }}>Working</option>
-                                        <option value="Day Off" {{ old('status') == 'Day Off' ? 'selected' : '' }}>Day Off</option>
-                                        <option value="Leave" {{ old('status') == 'Leave' ? 'selected' : '' }}>Leave</option>
-                                        <option value="Absent" {{ old('status') == 'Absent' ? 'selected' : '' }}>Absent</option>
-                                        <option value="Regular Holiday" {{ old('status') == 'Regular Holiday' ? 'selected' : '' }}>Regular Holiday</option>
-                                        <option value="Special Holiday" {{ old('status') == 'Special Holiday' ? 'selected' : '' }}>Special Holiday</option>
-                                        <option value="Overtime" {{ old('status') == 'Overtime' ? 'selected' : '' }}>Overtime</option>
+                                        <option value="Working" {{ old('status', $defaultStatus ?? '') == 'Working' ? 'selected' : '' }}>Working</option>
+                                        <option value="Day Off" {{ old('status', $defaultStatus ?? '') == 'Day Off' ? 'selected' : '' }}>Day Off</option>
+                                        <option value="Leave" {{ old('status', $defaultStatus ?? '') == 'Leave' ? 'selected' : '' }}>Leave</option>
+                                        <option value="Absent" {{ old('status', $defaultStatus ?? '') == 'Absent' ? 'selected' : '' }}>Absent</option>
+                                        <option value="Regular Holiday" {{ old('status', $defaultStatus ?? '') == 'Regular Holiday' ? 'selected' : '' }}>Regular Holiday</option>
+                                        <option value="Special Holiday" {{ old('status', $defaultStatus ?? '') == 'Special Holiday' ? 'selected' : '' }}>Special Holiday</option>
+                                        <option value="Overtime" {{ old('status', $defaultStatus ?? '') == 'Overtime' ? 'selected' : '' }}>Overtime</option>
                                     </select>
                                     @error('status')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -167,7 +167,7 @@
                                         <label for="time_in" class="block text-sm font-medium text-gray-700 mb-2">
                                             <i class="fas fa-clock mr-1"></i>Time In
                                         </label>
-                                        <input type="time" name="time_in" id="time_in" value="{{ old('time_in') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('time_in') border-red-500 @enderror">
+                                        <input type="time" name="time_in" id="time_in" value="{{ old('time_in', $defaultTimeIn ?? '') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('time_in') border-red-500 @enderror">
                                         @error('time_in')
                                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                         @enderror
@@ -177,7 +177,7 @@
                                         <label for="time_out" class="block text-sm font-medium text-gray-700 mb-2">
                                             <i class="fas fa-clock mr-1"></i>Time Out
                                         </label>
-                                        <input type="time" name="time_out" id="time_out" value="{{ old('time_out') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('time_out') border-red-500 @enderror">
+                                        <input type="time" name="time_out" id="time_out" value="{{ old('time_out', $defaultTimeOut ?? '') }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('time_out') border-red-500 @enderror">
                                         @error('time_out')
                                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                         @enderror
@@ -261,6 +261,36 @@ document.getElementById('status').addEventListener('change', function() {
     }
 });
 
+// Auto-apply default schedule values based on selected date (editable by admin after auto-fill)
+function applyAutoScheduleDefaults() {
+    const dateField = document.getElementById('date');
+    const statusField = document.getElementById('status');
+    const timeInField = document.getElementById('time_in');
+    const timeOutField = document.getElementById('time_out');
+
+    if (!dateField || !dateField.value) {
+        return;
+    }
+
+    const selectedDate = new Date(dateField.value + 'T00:00:00');
+    const day = selectedDate.getDay();
+    const isWeekday = day >= 1 && day <= 5;
+
+    if (isWeekday) {
+        statusField.value = 'Working';
+        timeInField.value = '09:00';
+        timeOutField.value = '17:00';
+    } else {
+        statusField.value = 'Day Off';
+        timeInField.value = '';
+        timeOutField.value = '';
+    }
+
+    statusField.dispatchEvent(new Event('change'));
+}
+
+document.getElementById('date').addEventListener('change', applyAutoScheduleDefaults);
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize department filter
@@ -273,6 +303,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusSelect = document.getElementById('status');
     if (statusSelect.value === 'Working' || statusSelect.value === 'Overtime' || statusSelect.value === 'Regular Holiday' || statusSelect.value === 'Special Holiday' || statusSelect.value === 'Day Off' || statusSelect.value === 'Leave') {
         document.getElementById('timeFields').style.display = 'grid';
+    }
+
+    // Auto-fill defaults on initial load only when this is a fresh create form.
+    if (!{{ old('status') ? 'true' : 'false' }}) {
+        applyAutoScheduleDefaults();
     }
 });
 </script>

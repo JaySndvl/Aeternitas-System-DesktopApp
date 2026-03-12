@@ -49,8 +49,144 @@
                             <label class="block text-sm font-medium text-gray-500">Phone Number</label>
                             <p class="mt-1 text-sm text-gray-900">{{ $employee->phone }}</p>
                         </div>
+                        @if($employee->date_of_birth)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Date of Birth</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->date_of_birth->format('M d, Y') }}</p>
+                        </div>
+                        @endif
+                        @if($employee->civil_status)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Employee's Civil Status</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->civil_status }}</p>
+                        </div>
+                        @endif
+                        @if($employee->home_address)
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-500">Employee's Home Address</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->home_address }}</p>
+                        </div>
+                        @endif
+                        @if($employee->current_address)
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-500">Employee's Current Address</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->current_address }}</p>
+                        </div>
+                        @endif
+                        @if($employee->mobile_number)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Employee's Mobile Number</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->mobile_number }}</p>
+                        </div>
+                        @endif
+                        @if($employee->facebook_link)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Facebook Link</label>
+                            <a href="{{ $employee->facebook_link }}" target="_blank" rel="noopener" class="mt-1 text-sm text-blue-600 hover:text-blue-700">{{ $employee->facebook_link }}</a>
+                        </div>
+                        @endif
+                        @if($employee->linkedin_link)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">LinkedIn Link</label>
+                            <a href="{{ $employee->linkedin_link }}" target="_blank" rel="noopener" class="mt-1 text-sm text-blue-600 hover:text-blue-700">{{ $employee->linkedin_link }}</a>
+                        </div>
+                        @endif
+                        @if($employee->ig_link)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">IG Link</label>
+                            <a href="{{ $employee->ig_link }}" target="_blank" rel="noopener" class="mt-1 text-sm text-blue-600 hover:text-blue-700">{{ $employee->ig_link }}</a>
+                        </div>
+                        @endif
+                        @if($employee->other_link)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Others Link</label>
+                            <a href="{{ $employee->other_link }}" target="_blank" rel="noopener" class="mt-1 text-sm text-blue-600 hover:text-blue-700">{{ $employee->other_link }}</a>
+                        </div>
+                        @endif
                     </div>
                 </div>
+
+                @if($employee->emergency_full_name || $employee->emergency_relationship || $employee->emergency_home_address || $employee->emergency_current_address || $employee->emergency_mobile_number || $employee->emergency_email || $employee->emergency_facebook_link)
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">In Case of an Emergency</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @if($employee->emergency_full_name)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Full Name</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->emergency_full_name }}</p>
+                        </div>
+                        @endif
+                        @if($employee->emergency_relationship)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Relationship</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->emergency_relationship }}</p>
+                        </div>
+                        @endif
+                        @if($employee->emergency_home_address)
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-500">Home Address</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->emergency_home_address }}</p>
+                        </div>
+                        @endif
+                        @if($employee->emergency_current_address)
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-500">Current Address</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->emergency_current_address }}</p>
+                        </div>
+                        @endif
+                        @if($employee->emergency_mobile_number)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Mobile Number</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->emergency_mobile_number }}</p>
+                        </div>
+                        @endif
+                        @if($employee->emergency_email)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Email Address</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->emergency_email }}</p>
+                        </div>
+                        @endif
+                        @if($employee->emergency_facebook_link)
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-500">Facebook Link</label>
+                            <a href="{{ $employee->emergency_facebook_link }}" target="_blank" rel="noopener" class="mt-1 text-sm text-blue-600 hover:text-blue-700">{{ $employee->emergency_facebook_link }}</a>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                @if($employee->loan_start_date || $employee->loan_end_date || $employee->loan_total_amount || $employee->loan_monthly_amortization)
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Employee Loans</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @if($employee->loan_start_date)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Start Date</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->loan_start_date->format('M d, Y') }}</p>
+                        </div>
+                        @endif
+                        @if($employee->loan_end_date)
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">End Date</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $employee->loan_end_date->format('M d, Y') }}</p>
+                        </div>
+                        @endif
+                        @if(!is_null($employee->loan_total_amount))
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Total Amount</label>
+                            <p class="mt-1 text-sm text-gray-900">₱{{ number_format($employee->loan_total_amount, 2) }}</p>
+                        </div>
+                        @endif
+                        @if(!is_null($employee->loan_monthly_amortization))
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Monthly Amortization</label>
+                            <p class="mt-1 text-sm text-gray-900">₱{{ number_format($employee->loan_monthly_amortization, 2) }}</p>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
 
                 <!-- Work Information -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

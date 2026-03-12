@@ -126,6 +126,187 @@
                     </div>
                 </div>
 
+                <!-- Additional Employee Details -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Employee Details</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                            <label for="date_of_birth" class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                            <input type="date" name="date_of_birth" id="date_of_birth" value="{{ old('date_of_birth') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('date_of_birth') border-red-500 @enderror">
+                            @error('date_of_birth')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="civil_status" class="block text-sm font-medium text-gray-700 mb-2">Employee's Civil Status</label>
+                            <input type="text" name="civil_status" id="civil_status" value="{{ old('civil_status') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('civil_status') border-red-500 @enderror">
+                            @error('civil_status')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="home_address" class="block text-sm font-medium text-gray-700 mb-2">Employee's Home Address</label>
+                            <textarea name="home_address" id="home_address" rows="2"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('home_address') border-red-500 @enderror">{{ old('home_address') }}</textarea>
+                            @error('home_address')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="current_address" class="block text-sm font-medium text-gray-700 mb-2">Employee's Current Address</label>
+                            <textarea name="current_address" id="current_address" rows="2"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('current_address') border-red-500 @enderror">{{ old('current_address') }}</textarea>
+                            @error('current_address')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="mobile_number" class="block text-sm font-medium text-gray-700 mb-2">Employee's Mobile Number</label>
+                            <input type="text" name="mobile_number" id="mobile_number" value="{{ old('mobile_number') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('mobile_number') border-red-500 @enderror">
+                            @error('mobile_number')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="facebook_link" class="block text-sm font-medium text-gray-700 mb-2">Facebook Link</label>
+                            <input type="url" name="facebook_link" id="facebook_link" value="{{ old('facebook_link') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('facebook_link') border-red-500 @enderror">
+                            @error('facebook_link')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="linkedin_link" class="block text-sm font-medium text-gray-700 mb-2">LinkedIn Link</label>
+                            <input type="url" name="linkedin_link" id="linkedin_link" value="{{ old('linkedin_link') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('linkedin_link') border-red-500 @enderror">
+                            @error('linkedin_link')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="ig_link" class="block text-sm font-medium text-gray-700 mb-2">IG Link</label>
+                            <input type="url" name="ig_link" id="ig_link" value="{{ old('ig_link') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('ig_link') border-red-500 @enderror">
+                            @error('ig_link')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="other_link" class="block text-sm font-medium text-gray-700 mb-2">Others Link</label>
+                            <input type="url" name="other_link" id="other_link" value="{{ old('other_link') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('other_link') border-red-500 @enderror">
+                            @error('other_link')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- In Case of Emergency -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">In Case of an Emergency</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                            <label for="emergency_full_name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input type="text" name="emergency_full_name" id="emergency_full_name" value="{{ old('emergency_full_name') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('emergency_full_name') border-red-500 @enderror">
+                            @error('emergency_full_name')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="emergency_relationship" class="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
+                            <input type="text" name="emergency_relationship" id="emergency_relationship" value="{{ old('emergency_relationship') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('emergency_relationship') border-red-500 @enderror">
+                            @error('emergency_relationship')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="emergency_home_address" class="block text-sm font-medium text-gray-700 mb-2">Home Address</label>
+                            <textarea name="emergency_home_address" id="emergency_home_address" rows="2"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('emergency_home_address') border-red-500 @enderror">{{ old('emergency_home_address') }}</textarea>
+                            @error('emergency_home_address')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="emergency_current_address" class="block text-sm font-medium text-gray-700 mb-2">Current Address</label>
+                            <textarea name="emergency_current_address" id="emergency_current_address" rows="2"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('emergency_current_address') border-red-500 @enderror">{{ old('emergency_current_address') }}</textarea>
+                            @error('emergency_current_address')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="emergency_mobile_number" class="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
+                            <input type="text" name="emergency_mobile_number" id="emergency_mobile_number" value="{{ old('emergency_mobile_number') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('emergency_mobile_number') border-red-500 @enderror">
+                            @error('emergency_mobile_number')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="emergency_email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input type="email" name="emergency_email" id="emergency_email" value="{{ old('emergency_email') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('emergency_email') border-red-500 @enderror">
+                            @error('emergency_email')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="emergency_facebook_link" class="block text-sm font-medium text-gray-700 mb-2">Facebook Link</label>
+                            <input type="url" name="emergency_facebook_link" id="emergency_facebook_link" value="{{ old('emergency_facebook_link') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('emergency_facebook_link') border-red-500 @enderror">
+                            @error('emergency_facebook_link')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employee Loans -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Employee Loans</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                            <label for="loan_start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                            <input type="date" name="loan_start_date" id="loan_start_date" value="{{ old('loan_start_date') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('loan_start_date') border-red-500 @enderror">
+                            @error('loan_start_date')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="loan_end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                            <input type="date" name="loan_end_date" id="loan_end_date" value="{{ old('loan_end_date') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('loan_end_date') border-red-500 @enderror">
+                            @error('loan_end_date')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="loan_total_amount" class="block text-sm font-medium text-gray-700 mb-2">Total Amount</label>
+                            <input type="number" step="0.01" min="0" name="loan_total_amount" id="loan_total_amount" value="{{ old('loan_total_amount') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('loan_total_amount') border-red-500 @enderror">
+                            @error('loan_total_amount')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="loan_monthly_amortization" class="block text-sm font-medium text-gray-700 mb-2">Monthly Amortization</label>
+                            <input type="number" step="0.01" min="0" name="loan_monthly_amortization" id="loan_monthly_amortization" value="{{ old('loan_monthly_amortization') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('loan_monthly_amortization') border-red-500 @enderror">
+                            @error('loan_monthly_amortization')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Account Information -->
                 <div>
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Account Information</h3>

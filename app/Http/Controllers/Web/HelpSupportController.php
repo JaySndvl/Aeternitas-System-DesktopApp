@@ -224,7 +224,7 @@ class HelpSupportController extends Controller
 
         HrContact::create($validated);
 
-        return redirect()->route('help-support.index')
+        return redirect()->route('hr.help-support')
             ->with('success', 'Your support ticket has been created. HR will respond shortly.');
     }
 }

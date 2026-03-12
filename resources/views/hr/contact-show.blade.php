@@ -163,7 +163,7 @@
                     </div>
                     
                     <div class="p-6 space-y-2">
-                        <a href="{{ route('hr.contacts-admin') }}" class="block w-full text-center px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                        <a href="{{ route('hr.contacts.admin') }}" class="block w-full text-center px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
                             <i class="fas fa-list mr-2"></i>
                             View All Contacts
                         </a>
