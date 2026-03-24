@@ -1,0 +1,6 @@
+node_modules/
+backend/vendor/
+backend/node_modules/
+backend/storage/logs/
+backend/bootstrap/cache/
+backend/.env

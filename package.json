@@ -1,0 +1,16 @@
+{
+  "name": "aeternitas-desktop-app",
+  "version": "0.1.0",
+  "description": "Desktop shell for Aeternitas payroll system",
+  "main": "main.js",
+  "author": "Aeternitas",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "setup:backend": "cd backend && composer install && npm install && npm run build"
+  },
+  "dependencies": {
+    "electron": "^32.0.0"
+  }
+}

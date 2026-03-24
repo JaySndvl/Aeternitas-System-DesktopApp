@@ -1,0 +1,50 @@
+name: Discord Notify
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Embed
+        run: |
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.ref_name }}"
+          ACTOR="${{ github.actor }}"
+          URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          TIMESTAMP="${{ github.event.head_commit.timestamp }}"
+
+          # Build commit list with full multi-line messages
+          COMMITS=$(jq -r '[.commits[] 
+              | "[`\(.id[0:7])`](\(.url)) \(.message)\n— \(.author.name)\n"
+            ] | join("\n")' <<< '${{ toJson(github.event) }}')
+
+          if [ -z "$COMMITS" ]; then
+            COMMITS="No commits found."
+          fi
+
+          PAYLOAD=$(jq -n --arg repo "$REPO" \
+                        --arg branch "$BRANCH" \
+                        --arg actor "$ACTOR" \
+                        --arg url "$URL" \
+                        --arg commits "$COMMITS" \
+                        --arg timestamp "$TIMESTAMP" \
+                        '{
+                          embeds: [{
+                            title: "🚀 New Push on \($repo)",
+                            description: "**Branch:** `\($branch)`\n**Pushed by:** `\($actor)`\n\n**Commits:**\n\($commits)",
+                            url: $url,
+                            color: 5814783,
+                            footer: { text: "GitHub → Discord Integration" },
+                            timestamp: $timestamp
+                          }]
+                        }')
+
+          curl -H "Content-Type: application/json" \
+               -d "$PAYLOAD" \
+               ${{ secrets.DISCORD_WEBHOOK }}

@@ -1,0 +1,1277 @@
+@extends('layouts.dashboard-base', ['user' => $user, 'activeRoute' => 'attendance.schedule'])
+
+@section('title', 'Schedule')
+
+@section('content')
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Work Schedule</h1>
+            <p class="mt-1 text-sm text-gray-600">Manage employee work schedules and shifts</p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <i class="fas fa-download mr-2"></i>
+                Export
+            </button>
+            <button class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <i class="fas fa-plus mr-2"></i>
+                Add Schedule
+            </button>
+        </div>
+    </div>
+
+    <!-- Schedule Filters -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label for="employee" class="block text-sm font-medium text-gray-700 mb-2">Employee</label>
+                <select id="employee" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    <option value="">All Employees</option>
+                    <option value="1">John Smith</option>
+                    <option value="2">Sarah Johnson</option>
+                    <option value="3">Michael Brown</option>
+                </select>
+            </div>
+            <div>
+                <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                <select id="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    <option value="">All Departments</option>
+                    <option value="1">IT Department</option>
+                    <option value="2">HR Department</option>
+                    <option value="3">Finance Department</option>
+                </select>
+            </div>
+            <div>
+                <label for="week" class="block text-sm font-medium text-gray-700 mb-2">Week</label>
+                <input type="week" id="week" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+            </div>
+            <div class="flex items-end">
+                <button onclick="applyFilters()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-search mr-2"></i>Apply
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Summary -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-calendar text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Total Schedules</p>
+                    <p class="text-lg font-semibold text-gray-900">32</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Active Schedules</p>
+                    <p class="text-lg font-semibold text-gray-900">28</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-yellow-600"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Shift Changes</p>
+                    <p class="text-lg font-semibold text-gray-900">4</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users text-purple-600"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-500">Scheduled Today</p>
+                    <p class="text-lg font-semibold text-gray-900">24</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Schedule View -->
+    <!--  
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">Weekly Schedule</h3>
+                    <p class="mt-1 text-sm text-gray-600">December 15-21, 2024</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-chevron-left mr-1"></i>Previous
+                    </button>
+                    <button class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Next<i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Employee
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Mon
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tue
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Wed
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Thu
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fri
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Sat
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Sun
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- Sample Schedule Data -->
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                                        <span class="text-sm font-medium text-white">JS</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">John Smith</div>
+                                    <div class="text-sm text-gray-500">IT Department</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                8:00-17:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                8:00-17:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                8:00-17:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                8:00-17:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                8:00-17:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Off
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Off
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900 transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                                        <span class="text-sm font-medium text-white">SJ</span>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">Sarah Johnson</div>
+                                    <div class="text-sm text-gray-500">HR Department</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                9:00-18:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                9:00-18:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                9:00-18:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                9:00-18:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                9:00-18:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                10:00-14:00
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Off
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <button class="text-blue-600 hover:text-blue-900 transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="text-red-600 hover:text-red-900 transition-colors">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    -->
+        
+    <!-- Schedule Period Management -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-medium text-gray-900">Schedule Periods</h3>
+            <button onclick="addNewPeriod()" class="inline-flex items-center px-3 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                <i class="fas fa-plus mr-2"></i>
+                Add New Period
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Period Card 1 -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="selectPeriod('period-1')">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-calendar text-blue-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="font-medium text-gray-900">September 1-15, 2025</h4>
+                            <p class="text-sm text-gray-500">Pay Period 1</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Total Employees:</span>
+                        <span class="font-medium text-gray-900">24</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Scheduled:</span>
+                        <span class="font-medium text-gray-900">22</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Pending:</span>
+                        <span class="font-medium text-yellow-600">2</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                    </button>
+                    <button class="text-green-600 hover:text-green-900 text-sm transition-colors">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </button>
+                </div>
+            </div>
+
+            <!-- Period Card 2 -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="selectPeriod('period-2')">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-calendar text-blue-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="font-medium text-gray-900">September 16-30, 2025</h4>
+                            <p class="text-sm text-gray-500">Pay Period 2</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Draft
+                    </span>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Total Employees:</span>
+                        <span class="font-medium text-gray-900">24</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Scheduled:</span>
+                        <span class="font-medium text-gray-900">18</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Pending:</span>
+                        <span class="font-medium text-yellow-600">6</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                    </button>
+                    <button class="text-green-600 hover:text-green-900 text-sm transition-colors">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </button>
+                </div>
+            </div>
+
+            <!-- Period Card 3 -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer" onclick="selectPeriod('period-3')">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-calendar text-blue-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="font-medium text-gray-900">October 1-15, 2025</h4>
+                            <p class="text-sm text-gray-500">Pay Period 3</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Planning
+                    </span>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Total Employees:</span>
+                        <span class="font-medium text-gray-900">24</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Scheduled:</span>
+                        <span class="font-medium text-gray-900">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Pending:</span>
+                        <span class="font-medium text-yellow-600">24</span>
+                    </div>
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                    </button>
+                    <button class="text-green-600 hover:text-green-900 text-sm transition-colors">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Details Screen -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" id="periodDetailsView" style="display: none;">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900" id="periodDetailsTitle">Period Details</h3>
+                <p class="mt-1 text-sm text-gray-600" id="periodDetailsSubtitle">Manage schedules for this period</p>
+            </div>
+            <button onclick="closePeriodDetailsView()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Week Tabs -->
+        <div class="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg" id="weekTabsContainer">
+            <!-- Week tabs will be dynamically generated here -->
+        </div>
+
+        <!-- Calendar Grid -->
+        <div id="calendarGridContainer">
+            <!-- Calendar grid will be dynamically generated here -->
+        </div>
+    </div>
+
+    <!-- Weekly View (Legacy) -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" id="weeklyView" style="display: none;">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-medium text-gray-900">Weekly Schedule - September 1-15, 2025</h3>
+            <button onclick="closeWeeklyView()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Week Tabs -->
+        <div class="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+            <button onclick="selectWeek('week1')" class="week-tab flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm">
+                Week 1 (Sep 1-7)
+            </button>
+            <button onclick="selectWeek('week2')" class="week-tab flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-600 hover:text-gray-900">
+                Week 2 (Sep 8-14)
+            </button>
+            <button onclick="selectWeek('week3')" class="week-tab flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-600 hover:text-gray-900">
+                Week 3 (Sep 15)
+            </button>
+        </div>
+
+        <!-- Daily View -->
+        <div id="dailyView">
+            <div class="grid grid-cols-7 gap-2 mb-4">
+                <div class="text-center text-sm font-medium text-gray-500 py-2">Mon</div>
+                <div class="text-center text-sm font-medium text-gray-500 py-2">Tue</div>
+                <div class="text-center text-sm font-medium text-gray-500 py-2">Wed</div>
+                <div class="text-center text-sm font-medium text-gray-500 py-2">Thu</div>
+                <div class="text-center text-sm font-medium text-gray-500 py-2">Fri</div>
+                <div class="text-center text-sm font-medium text-gray-500 py-2">Sat</div>
+                <div class="text-center text-sm font-medium text-gray-500 py-2">Sun</div>
+            </div>
+            
+            <div class="grid grid-cols-7 gap-2">
+                <!-- Monday -->
+                <div class="border border-gray-200 rounded-lg p-3 min-h-24">
+                    <div class="text-sm font-medium text-gray-900 mb-2">Sep 1</div>
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Day Shift
+                        </div>
+                        <div class="text-xs text-gray-500">8:00-17:00</div>
+                    </div>
+                </div>
+                
+                <!-- Tuesday -->
+                <div class="border border-gray-200 rounded-lg p-3 min-h-24">
+                    <div class="text-sm font-medium text-gray-900 mb-2">Sep 2</div>
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Day Shift
+                        </div>
+                        <div class="text-xs text-gray-500">8:00-17:00</div>
+                    </div>
+                </div>
+                
+                <!-- Wednesday -->
+                <div class="border border-gray-200 rounded-lg p-3 min-h-24">
+                    <div class="text-sm font-medium text-gray-900 mb-2">Sep 3</div>
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Day Shift
+                        </div>
+                        <div class="text-xs text-gray-500">8:00-17:00</div>
+                    </div>
+                </div>
+                
+                <!-- Thursday -->
+                <div class="border border-gray-200 rounded-lg p-3 min-h-24">
+                    <div class="text-sm font-medium text-gray-900 mb-2">Sep 4</div>
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Day Shift
+                        </div>
+                        <div class="text-xs text-gray-500">8:00-17:00</div>
+                    </div>
+                </div>
+                
+                <!-- Friday -->
+                <div class="border border-gray-200 rounded-lg p-3 min-h-24">
+                    <div class="text-sm font-medium text-gray-900 mb-2">Sep 5</div>
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Day Shift
+                        </div>
+                        <div class="text-xs text-gray-500">8:00-17:00</div>
+                    </div>
+                </div>
+                
+                <!-- Saturday -->
+                <div class="border border-gray-200 rounded-lg p-3 min-h-24">
+                    <div class="text-sm font-medium text-gray-900 mb-2">Sep 6</div>
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Off
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sunday -->
+                <div class="border border-gray-200 rounded-lg p-3 min-h-24">
+                    <div class="text-sm font-medium text-gray-900 mb-2">Sep 7</div>
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Off
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Assignment Layer -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" id="employeeAssignment" style="display: none;">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-medium text-gray-900">Employee Assignment</h3>
+            <button onclick="closeEmployeeAssignment()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Available Employees -->
+            <div>
+                <h4 class="font-medium text-gray-900 mb-4">Available Employees</h4>
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-8 w-8">
+                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                                    <span class="text-xs font-medium text-white">JS</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <div class="text-sm font-medium text-gray-900">John Smith</div>
+                                <div class="text-sm text-gray-500">IT Department</div>
+                            </div>
+                        </div>
+                        <button onclick="assignEmployee('john-smith')" class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                            <i class="fas fa-plus mr-1"></i>Assign
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-8 w-8">
+                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                                    <span class="text-xs font-medium text-white">SJ</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <div class="text-sm font-medium text-gray-900">Sarah Johnson</div>
+                                <div class="text-sm text-gray-500">HR Department</div>
+                            </div>
+                        </div>
+                        <button onclick="assignEmployee('sarah-johnson')" class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                            <i class="fas fa-plus mr-1"></i>Assign
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Assigned Employees -->
+            <div>
+                <h4 class="font-medium text-gray-900 mb-4">Assigned Employees</h4>
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-green-50">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-8 w-8">
+                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                                    <span class="text-xs font-medium text-white">MB</span>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <div class="text-sm font-medium text-gray-900">Michael Brown</div>
+                                <div class="text-sm text-gray-500">Finance Department</div>
+                            </div>
+                        </div>
+                        <button onclick="unassignEmployee('michael-brown')" class="text-red-600 hover:text-red-900 text-sm transition-colors">
+                            <i class="fas fa-times mr-1"></i>Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Templates -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Schedule Templates</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">Regular Shift</h4>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Monday to Friday, 8:00 AM - 5:00 PM</p>
+                <div class="flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                    </button>
+                    <button class="text-green-600 hover:text-green-900 text-sm transition-colors">
+                        <i class="fas fa-copy mr-1"></i>Apply
+                    </button>
+                </div>
+            </div>
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">Flexible Hours</h4>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Active
+                    </span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Monday to Friday, 9:00 AM - 6:00 PM</p>
+                <div class="flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                    </button>
+                    <button class="text-green-600 hover:text-green-900 text-sm transition-colors">
+                        <i class="fas fa-copy mr-1"></i>Apply
+                    </button>
+                </div>
+            </div>
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-gray-900">Part-time</h4>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Active
+                    </span>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Monday to Saturday, 10:00 AM - 2:00 PM</p>
+                <div class="flex space-x-2">
+                    <button class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                    </button>
+                    <button class="text-green-600 hover:text-green-900 text-sm transition-colors">
+                        <i class="fas fa-copy mr-1"></i>Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add New Period Modal -->
+<div id="addPeriodModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" style="display: none;">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-2xl bg-white">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-medium text-gray-900">Add New Schedule Period</h3>
+            <button onclick="closeAddPeriodModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="addPeriodForm" class="space-y-4">
+            <!-- Start Date -->
+            <div>
+                <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input 
+                    type="date" 
+                    id="startDate" 
+                    name="startDate" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    required
+                >
+            </div>
+            
+            <!-- End Date -->
+            <div>
+                <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <input 
+                    type="date" 
+                    id="endDate" 
+                    name="endDate" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    required
+                >
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                <input 
+                    type="text" 
+                    id="description" 
+                    name="description" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    placeholder="Enter period description..."
+                >
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3 pt-6">
+                <button type="button" onclick="closeAddPeriodModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Shift Assignment Modal -->
+<div id="shiftModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" style="display: none;">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Shift Assignment</h3>
+            <button onclick="closeShiftModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form class="space-y-4">
+            <!-- Shift Type Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-3">Shift Type</label>
+                <div class="space-y-2">
+                    <label class="flex items-center">
+                        <input type="radio" name="shift" value="day" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2" checked>
+                        <span class="ml-2 text-sm text-gray-700">Day Shift (8:00 AM - 5:00 PM)</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="shift" value="night" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                        <span class="ml-2 text-sm text-gray-700">Night Shift (10:00 PM - 7:00 AM)</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="shift" value="custom" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                        <span class="ml-2 text-sm text-gray-700">Custom Hours</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Custom Hours (shown when custom is selected) -->
+            <div id="customHours" style="display: none;">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                        <input type="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                        <input type="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes Field -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" placeholder="Add any special instructions or notes..."></textarea>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3 pt-4">
+                <button type="button" onclick="closeShiftModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Save Assignment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function applyFilters() {
+    const employee = document.getElementById('employee').value;
+    const department = document.getElementById('department').value;
+    const week = document.getElementById('week').value;
+    
+    // This will be implemented when backend is ready
+    console.log('Applying schedule filters:', { employee, department, week });
+}
+
+// Period Management
+function selectPeriod(periodId) {
+    // Hide other views
+    document.getElementById('weeklyView').style.display = 'none';
+    document.getElementById('employeeAssignment').style.display = 'none';
+    
+    // Show period details view
+    document.getElementById('periodDetailsView').style.display = 'block';
+    
+    // Generate period details based on periodId
+    generatePeriodDetails(periodId);
+}
+
+function addNewPeriod() {
+    document.getElementById('addPeriodModal').style.display = 'block';
+}
+
+function closeAddPeriodModal() {
+    document.getElementById('addPeriodModal').style.display = 'none';
+    // Reset form
+    document.getElementById('addPeriodForm').reset();
+}
+
+function closeWeeklyView() {
+    document.getElementById('weeklyView').style.display = 'none';
+}
+
+function closePeriodDetailsView() {
+    document.getElementById('periodDetailsView').style.display = 'none';
+}
+
+// Generate Period Details
+function generatePeriodDetails(periodId) {
+    // Sample period data - in real app, this would come from backend
+    const periodData = getPeriodData(periodId);
+    
+    // Update title and subtitle
+    document.getElementById('periodDetailsTitle').textContent = periodData.title;
+    document.getElementById('periodDetailsSubtitle').textContent = periodData.subtitle;
+    
+    // Generate week tabs
+    generateWeekTabs(periodData.weeks);
+    
+    // Generate calendar grid for first week
+    generateCalendarGrid(periodData.weeks[0]);
+}
+
+// Get period data (sample data)
+function getPeriodData(periodId) {
+    const periods = {
+        'period-1': {
+            title: 'September 1-15, 2025',
+            subtitle: 'Pay Period 1 - Manage schedules for this period',
+            weeks: [
+                {
+                    id: 'week1',
+                    name: 'Week 1',
+                    dateRange: 'Sep 1-7',
+                    startDate: new Date('2025-09-01'),
+                    endDate: new Date('2025-09-07'),
+                    days: [
+                        { date: 'Sep 1', dayOfWeek: 'Mon', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 2', dayOfWeek: 'Tue', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 3', dayOfWeek: 'Wed', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 4', dayOfWeek: 'Thu', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 5', dayOfWeek: 'Fri', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 6', dayOfWeek: 'Sat', isHoliday: false, shifts: [] },
+                        { date: 'Sep 7', dayOfWeek: 'Sun', isHoliday: false, shifts: [] }
+                    ]
+                },
+                {
+                    id: 'week2',
+                    name: 'Week 2',
+                    dateRange: 'Sep 8-14',
+                    startDate: new Date('2025-09-08'),
+                    endDate: new Date('2025-09-14'),
+                    days: [
+                        { date: 'Sep 8', dayOfWeek: 'Mon', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 9', dayOfWeek: 'Tue', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 10', dayOfWeek: 'Wed', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 11', dayOfWeek: 'Thu', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 12', dayOfWeek: 'Fri', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 13', dayOfWeek: 'Sat', isHoliday: false, shifts: [] },
+                        { date: 'Sep 14', dayOfWeek: 'Sun', isHoliday: false, shifts: [] }
+                    ]
+                },
+                {
+                    id: 'week3',
+                    name: 'Week 3',
+                    dateRange: 'Sep 15',
+                    startDate: new Date('2025-09-15'),
+                    endDate: new Date('2025-09-15'),
+                    days: [
+                        { date: 'Sep 15', dayOfWeek: 'Mon', isHoliday: true, shifts: [] },
+                        { date: '', dayOfWeek: 'Tue', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Wed', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Thu', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Fri', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Sat', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Sun', isHoliday: false, shifts: [] }
+                    ]
+                }
+            ]
+        },
+        'period-2': {
+            title: 'September 16-30, 2025',
+            subtitle: 'Pay Period 2 - Manage schedules for this period',
+            weeks: [
+                {
+                    id: 'week1',
+                    name: 'Week 1',
+                    dateRange: 'Sep 16-22',
+                    startDate: new Date('2025-09-16'),
+                    endDate: new Date('2025-09-22'),
+                    days: [
+                        { date: 'Sep 16', dayOfWeek: 'Mon', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 17', dayOfWeek: 'Tue', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 18', dayOfWeek: 'Wed', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 19', dayOfWeek: 'Thu', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 20', dayOfWeek: 'Fri', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 21', dayOfWeek: 'Sat', isHoliday: false, shifts: [] },
+                        { date: 'Sep 22', dayOfWeek: 'Sun', isHoliday: false, shifts: [] }
+                    ]
+                },
+                {
+                    id: 'week2',
+                    name: 'Week 2',
+                    dateRange: 'Sep 23-29',
+                    startDate: new Date('2025-09-23'),
+                    endDate: new Date('2025-09-29'),
+                    days: [
+                        { date: 'Sep 23', dayOfWeek: 'Mon', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 24', dayOfWeek: 'Tue', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 25', dayOfWeek: 'Wed', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 26', dayOfWeek: 'Thu', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 27', dayOfWeek: 'Fri', isHoliday: false, shifts: ['day'] },
+                        { date: 'Sep 28', dayOfWeek: 'Sat', isHoliday: false, shifts: [] },
+                        { date: 'Sep 29', dayOfWeek: 'Sun', isHoliday: false, shifts: [] }
+                    ]
+                },
+                {
+                    id: 'week3',
+                    name: 'Week 3',
+                    dateRange: 'Sep 30',
+                    startDate: new Date('2025-09-30'),
+                    endDate: new Date('2025-09-30'),
+                    days: [
+                        { date: 'Sep 30', dayOfWeek: 'Mon', isHoliday: false, shifts: ['day'] },
+                        { date: '', dayOfWeek: 'Tue', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Wed', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Thu', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Fri', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Sat', isHoliday: false, shifts: [] },
+                        { date: '', dayOfWeek: 'Sun', isHoliday: false, shifts: [] }
+                    ]
+                }
+            ]
+        }
+    };
+    
+    return periods[periodId] || periods['period-1'];
+}
+
+// Generate Week Tabs
+function generateWeekTabs(weeks) {
+    const container = document.getElementById('weekTabsContainer');
+    container.innerHTML = '';
+    
+    weeks.forEach((week, index) => {
+        const tab = document.createElement('button');
+        tab.className = `week-tab flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${index === 0 ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`;
+        tab.textContent = `${week.name} (${week.dateRange})`;
+        tab.onclick = () => selectPeriodWeek(week.id, week);
+        
+        container.appendChild(tab);
+    });
+}
+
+// Generate Calendar Grid
+function generateCalendarGrid(week) {
+    const container = document.getElementById('calendarGridContainer');
+    
+    // Day headers
+    const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    container.innerHTML = `
+        <div class="grid grid-cols-7 gap-2 mb-4">
+            ${dayHeaders.map(day => `<div class="text-center text-sm font-medium text-gray-500 py-2">${day}</div>`).join('')}
+        </div>
+        <div class="grid grid-cols-7 gap-2">
+            ${week.days.map(day => generateDayCell(day)).join('')}
+        </div>
+    `;
+}
+
+// Generate Day Cell
+function generateDayCell(day) {
+    if (!day.date) {
+        return '<div class="border border-gray-200 rounded-lg p-3 min-h-24 bg-gray-50"></div>';
+    }
+    
+    const holidayBadge = day.isHoliday ? 
+        '<div class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mb-2"><i class="fas fa-calendar-times mr-1"></i>Holiday</div>' : '';
+    
+    const shiftToggles = generateShiftToggles(day.shifts, day.date);
+    
+    const employeeDropdown = generateEmployeeDropdown(day.date);
+    
+    return `
+        <div class="border border-gray-200 rounded-lg p-3 min-h-32 hover:shadow-md transition-shadow">
+            <div class="text-sm font-medium text-gray-900 mb-2">${day.date}</div>
+            ${holidayBadge}
+            <div class="space-y-2">
+                ${shiftToggles}
+                ${employeeDropdown}
+            </div>
+        </div>
+    `;
+}
+
+// Generate Shift Toggles
+function generateShiftToggles(shifts, date) {
+    const shiftTypes = [
+        { id: 'day', label: '☀️ Day', icon: 'fas fa-sun', color: 'bg-yellow-100 text-yellow-800' },
+        { id: 'night', label: '🌙 Night', icon: 'fas fa-moon', color: 'bg-blue-100 text-blue-800' },
+        { id: 'custom', label: '⚙️ Custom', icon: 'fas fa-cog', color: 'bg-purple-100 text-purple-800' }
+    ];
+    
+    return `
+        <div class="space-y-1">
+            ${shiftTypes.map(shift => `
+                <label class="flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-2"
+                        ${shifts.includes(shift.id) ? 'checked' : ''}
+                        onchange="toggleShift('${date}', '${shift.id}', this.checked)"
+                    >
+                    <span class="text-xs font-medium ${shift.color} px-2 py-1 rounded-full">${shift.label}</span>
+                </label>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Generate Employee Dropdown
+function generateEmployeeDropdown(date) {
+    return `
+        <div class="mt-2">
+            <select class="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-transparent" onchange="assignEmployeeToDay('${date}', this.value)">
+                <option value="">Select Employee</option>
+                <option value="john-smith">John Smith</option>
+                <option value="sarah-johnson">Sarah Johnson</option>
+                <option value="michael-brown">Michael Brown</option>
+            </select>
+        </div>
+    `;
+}
+
+// Select Period Week
+function selectPeriodWeek(weekId, week) {
+    // Update tab styles
+    document.querySelectorAll('.week-tab').forEach(tab => {
+        tab.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        tab.classList.add('text-gray-600');
+    });
+    
+    event.target.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+    event.target.classList.remove('text-gray-600');
+    
+    // Generate calendar grid for selected week
+    generateCalendarGrid(week);
+}
+
+// Toggle Shift
+function toggleShift(date, shiftType, isEnabled) {
+    console.log(`Toggling ${shiftType} shift for ${date}: ${isEnabled}`);
+    // This would update the backend
+}
+
+// Assign Employee to Day
+function assignEmployeeToDay(date, employeeId) {
+    console.log(`Assigning employee ${employeeId} to ${date}`);
+    // This would update the backend
+}
+
+// Week Management
+function selectWeek(weekId) {
+    // Update tab styles
+    document.querySelectorAll('.week-tab').forEach(tab => {
+        tab.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        tab.classList.add('text-gray-600');
+    });
+    
+    event.target.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+    event.target.classList.remove('text-gray-600');
+    
+    // Update daily view content based on selected week
+    updateDailyView(weekId);
+}
+
+function updateDailyView(weekId) {
+    // This will update the daily view based on the selected week
+    console.log('Updating daily view for:', weekId);
+}
+
+// Employee Assignment
+function assignEmployee(employeeId) {
+    console.log('Assigning employee:', employeeId);
+}
+
+function unassignEmployee(employeeId) {
+    console.log('Unassigning employee:', employeeId);
+}
+
+function closeEmployeeAssignment() {
+    document.getElementById('employeeAssignment').style.display = 'none';
+}
+
+// Shift Modal
+function openShiftModal() {
+    document.getElementById('shiftModal').style.display = 'block';
+}
+
+function closeShiftModal() {
+    document.getElementById('shiftModal').style.display = 'none';
+}
+
+// Custom hours toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const shiftRadios = document.querySelectorAll('input[name="shift"]');
+    const customHours = document.getElementById('customHours');
+    
+    shiftRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customHours.style.display = 'block';
+            } else {
+                customHours.style.display = 'none';
+            }
+        });
+    });
+
+    // Add Period Form Submission
+    const addPeriodForm = document.getElementById('addPeriodForm');
+    if (addPeriodForm) {
+        addPeriodForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const description = document.getElementById('description').value;
+            
+            // Validate dates
+            if (new Date(startDate) >= new Date(endDate)) {
+                alert('End date must be after start date');
+                return;
+            }
+            
+            // Create new period card (this would normally be handled by backend)
+            addNewPeriodCard(startDate, endDate, description);
+            
+            // Close modal and reset form
+            closeAddPeriodModal();
+        });
+    }
+
+    // Click outside modal to close
+    const addPeriodModal = document.getElementById('addPeriodModal');
+    if (addPeriodModal) {
+        addPeriodModal.addEventListener('click', function(e) {
+            if (e.target === addPeriodModal) {
+                closeAddPeriodModal();
+            }
+        });
+    }
+});
+
+// Function to add new period card to the list
+function addNewPeriodCard(startDate, endDate, description) {
+    const periodsContainer = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-3.gap-4');
+    
+    // Format dates for display
+    const startDateFormatted = new Date(startDate).toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+    const endDateFormatted = new Date(endDate).toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+    
+    // Create new period card
+    const newPeriodCard = document.createElement('div');
+    newPeriodCard.className = 'border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer';
+    newPeriodCard.onclick = () => selectPeriod('period-new');
+    
+    newPeriodCard.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-calendar text-blue-600"></i>
+                </div>
+                <div class="ml-3">
+                    <h4 class="font-medium text-gray-900">${startDateFormatted} - ${endDateFormatted}</h4>
+                    <p class="text-sm text-gray-500">${description || 'New Period'}</p>
+                </div>
+            </div>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                Planning
+            </span>
+        </div>
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Total Employees:</span>
+                <span class="font-medium text-gray-900">0</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Scheduled:</span>
+                <span class="font-medium text-gray-900">0</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Pending:</span>
+                <span class="font-medium text-yellow-600">0</span>
+            </div>
+        </div>
+        <div class="mt-4 flex space-x-2">
+            <button class="text-blue-600 hover:text-blue-900 text-sm transition-colors">
+                <i class="fas fa-edit mr-1"></i>Edit
+            </button>
+            <button class="text-green-600 hover:text-green-900 text-sm transition-colors">
+                <i class="fas fa-eye mr-1"></i>View
+            </button>
+        </div>
+    `;
+    
+    // Add to the beginning of the periods container
+    periodsContainer.insertBefore(newPeriodCard, periodsContainer.firstChild);
+}
+</script>
+@endsection
